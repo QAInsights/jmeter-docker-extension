@@ -27,6 +27,8 @@ To build the extension, use `make build-extension` **or**:
   docker buildx build -t qainsights/jmeter-docker-extension:latest . --load
 ```
 
+## 🌱 Installation 
+### 🪜 Make
 To install the extension, use `make install-extension` **or**:
 
 ```shell
@@ -35,7 +37,26 @@ To install the extension, use `make install-extension` **or**:
 
 > If you want to automate this command, use the `-f` or `--force` flag to accept the warning message.
 
-To preview the extension in Docker Desktop, open Docker Dashboard once the installation is complete. The left-hand menu displays a new tab with the name of the extension which is `JMeter`. You can also use `docker extension ls` to see that the extension has been installed successfully.
+### 🗜️ Docker Extensions Marketplace (Recommended Method)
+
+JMeter extension can be easily installed from the [Docker Extensions Marketplace](https://hub.docker.com/search?q=&type=extension) via web or directly from Docker Desktop.
+
+Docker Extensions are available as part of Docker Desktop 4.8.0 and later releases. [Download and install Docker Desktop 4.8.0 or later](https://docs.docker.com/desktop/release-notes/).
+
+To install an extension:
+
+1. Open Docker Desktop.
+2. From the Dashboard, select Add Extensions in the menu bar. The Extensions Marketplace opens on the Browse tab.
+Search for `JMeter`.
+3. Choose you extension and select Install.
+
+From here, you can select Open to access the extension or install additional extensions. The extension also appears in the left-hand menu and in the Manage tab.
+
+## 🎥 Preview the extension
+
+To preview the extension in Docker Desktop, open Docker Dashboard once the installation is complete. 
+
+The left-hand menu displays a new tab with the name of the extension which is `JMeter`. You can also use `docker extension ls` to see that the extension has been installed successfully.
 
 Use the `docker extension update` command to remove and re-install the extension automatically:
 
@@ -46,6 +67,14 @@ docker extension update qainsights/jmeter-docker-extension:latest
 
 > Extension containers are hidden from the Docker Dashboard by default. You can change this in Settings > Extensions > Show Docker Extensions system containers.
 
+# 🪵 Update an extension
+
+You can update any extension outside of Docker Desktop releases. To update an extension to the latest version:
+
+1. Navigate to Docker Dashboard, and from the menu bar select the ellipsis to the right of Extensions.
+2. Select Manage. The Manage tab displays with all your installed extensions. If an extension has a new version available, it displays an Update button.
+3. Select Update.
+
 # 🗑️ Clean up
 
 To remove the extension:
@@ -53,6 +82,10 @@ To remove the extension:
 ```shell
 docker extension rm qainsights/jmeter-docker-extension:latest
 ```
+
+1. Or from the menu bar, select the ellipsis to the right of Extensions.
+2. Select Manage. This displays a list of extensions you've installed.
+3. Select Uninstall.
 
 # ⏭️ What's next?
 
