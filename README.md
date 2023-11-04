@@ -8,7 +8,7 @@ Run your JMeter load tests without installing JMeter in your local inside Docker
 
 ✅ Includes base image `qainsights/jmeter:latest` by default  
 ✅ Light-weight and secured container  
-✅ Supports JMeter plugins
+✅ Supports JMeter plugins  
 ✅ Mount volume for easy management  
 ✅ Supports property files  
 ✅ Supports proxy configuration  
