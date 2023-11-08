@@ -1,41 +1,67 @@
-# FROM golang:1.19-alpine AS builder
-# ENV CGO_ENABLED=0
-# WORKDIR /backend
-# COPY backend/go.* .
-# RUN --mount=type=cache,target=/go/pkg/mod \
-#     --mount=type=cache,target=/root/.cache/go-build \
-#     go mod download
-# COPY backend/. .
-# RUN --mount=type=cache,target=/go/pkg/mod \
-#     --mount=type=cache,target=/root/.cache/go-build \
-#     go build -trimpath -ldflags="-s -w" -o bin/service
-
 FROM --platform=$BUILDPLATFORM node:18.12-alpine3.16 AS client-builder
 WORKDIR /ui
-# cache packages in layer
+
 COPY ui/package.json /ui/package.json
 COPY ui/package-lock.json /ui/package-lock.json
 RUN --mount=type=cache,target=/usr/src/app/.npm \
     npm set cache /usr/src/app/.npm && \
     npm ci
-# install
 COPY ui /ui
 RUN npm run build
 
 FROM alpine
-LABEL org.opencontainers.image.title="JMeter" \
-    org.opencontainers.image.description="Execute JMeter tests in Docker" \
-    org.opencontainers.image.vendor="QAInsights" \
-    com.docker.desktop.extension.api.version="0.3.4" \
-    com.docker.extension.screenshots="" \
-    com.docker.desktop.extension.icon="" \
-    com.docker.extension.detailed-description="" \
-    com.docker.extension.publisher-url="" \
-    com.docker.extension.additional-urls="" \
-    com.docker.extension.categories="" \
-    com.docker.extension.changelog=""
 
-# COPY --from=builder /backend/bin/service /
+ARG EXTENSION_NAME='JMeter'
+ARG DESCRIPTION='Execute JMeter tests in Docker'
+ARG DESCRIPTION_LONG="<h1>Apache JMeter Docker Extension</h1> \
+<h2>⚡️ Features</h2><ul> \
+<li>Includes base image 'qainsights/jmeter:latest by default</li> \
+<li>Light-weight and secured container</li> \
+<li>Supports JMeter plugins</li> \
+<li>Mount volume for easy management</li> \
+<li>Supports property files</li> \
+<li>Supports proxy configuration</li> \
+<li>Generates logs and results</li> \
+<li>Intuitive HTML report</li> \
+<li>Displays runtime console logs</li> \
+<li>Timely notifications</li> \
+</ul> \
+"
+ARG VENDOR='QAInsights'
+ARG LICENSE='Apache License 2.0'
+
+ARG ICON_URL='https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/feather.svg'
+ARG SCREENSHOTS_URLS='[ { "alt": "Apache JMeter Docker Extension", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/JMeter-Docker-Extension.png" }, \
+                    { "alt": "Output Logs", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/Output-Logs.png" } ]'
+ARG PUBLISHER_URL='https://qainsights.com/'
+
+ARG ADDITIONAL_URLS='[ \
+                    { "title": "QAInsights", "url": "https://qainsights.com" }, \
+                    { "title": "GitHub", "url": "https://github.com/QAInsights/jmeter-docker-extension" }, \
+                    { "title": "Community", "url": "https://community.qainsights.com" }, \
+                    { "title": "YouTube", "url": "https://youtube.com/qainsights" } \
+                    ]'
+ARG CHANGELOG='<p>Extension changelog:</p> <ul> \
+<li>Update intro video tutorial</li> \
+<li>Update screenshots</li> \
+</ul>'
+
+ARG CATEGORIES='testing-tools'
+ARG DD_VERSION='>=0.2.3'
+ARG DD_API_VERSION=">= 0.2.3"
+
+LABEL org.opencontainers.image.title="${EXTENSION_NAME}" 
+LABEL org.opencontainers.image.description="${DESCRIPTION}" 
+LABEL org.opencontainers.image.vendor="${VENDOR}" 
+LABEL com.docker.desktop.extension.api.version="${DD_API_VERSION}" 
+LABEL com.docker.extension.screenshots="${SCREENSHOTS_URLS}" 
+LABEL com.docker.desktop.extension.icon="${ICON_URL}" 
+LABEL com.docker.extension.detailed-description="${DESCRIPTION_LONG}" 
+LABEL com.docker.extension.publisher-url="${PUBLISHER_URL}" 
+LABEL com.docker.extension.additional-urls="${ADDITIONAL_URLS}" 
+LABEL com.docker.extension.categories="${CATEGORIES}" 
+LABEL com.docker.extension.changelog="${CHANGELOG}"
+
 COPY docker-compose.yaml .
 COPY metadata.json .
 COPY feather.svg .
