@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import IntroDialog from './IntroDialog'; 
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -321,6 +322,7 @@ export function App() {
   const [resultsPath, setResultsPath] = React.useState<string>();
   const [logsPath, setLogsPath] = React.useState<string>();
   const [isTestRunning, setIsTestRunning] = React.useState<boolean>(false);
+  
 
   const [outputLogs, setOutputLogs] = React.useState('');
   const [running, setRunning] = React.useState<boolean>(false); 
@@ -348,10 +350,6 @@ export function App() {
     // Clear output text field 
     setOutputLogs('');
   }
-  // const fetchAndDisplayResponse = async () => {
-  //   const result = await ddClient.extension.vm?.service?.get('/hello');
-  //   setResponse(JSON.stringify(result));
-  // };
 
   const openExternalLink= (url: string) => {
     return ddClient.host.openExternal(
@@ -361,7 +359,8 @@ export function App() {
 
   return (
     <>
-    
+     <IntroDialog /> 
+
       <br />
       <br />
       <div style={{textAlign: 'center'}}>
