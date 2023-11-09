@@ -11,6 +11,7 @@ import OutputIcon from '@mui/icons-material/Output';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import PasswordIcon from '@mui/icons-material/Password';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
+import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import darklogo from '../apache-jmeter-logo-dark.svg';
 import lightlogo from '../apache-jmeter-logo-light.svg';
@@ -52,7 +53,9 @@ async function terminateContainer(containerId: string) {
       console.error(error);
     }
 }
-function validateInputs(imageName: string, testPlan: string, volumePath: string, resultsPath: string, logsPath: string) {
+function validateInputs(imageName: string, testPlan: string, volumePath: string, 
+                        resultsPath: string, logsPath: string,
+                        setCpus: string, setCpuSet: string) {
   const ddClient = useDockerDesktopClient(); 
 
   // Check for required fields, if empty then exit  
@@ -78,8 +81,16 @@ function validateInputs(imageName: string, testPlan: string, volumePath: string,
   }
   else if(!resultsPath.includes('.')) {
       ddClient.desktopUI.toast.warning('Results path must contain a file with an extension.');
-      return false;
+      return false;    
   }
+  if (setCpuSet.trim().endsWith('-') || setCpuSet.trim().endsWith(',')) {
+    ddClient.desktopUI.toast.warning('CPU Set cannot end with a hyphen or comma');
+    return false;
+  }
+  if (setCpuSet.trim().startsWith('-') || setCpuSet.trim().startsWith(',')) {
+    ddClient.desktopUI.toast.warning('CPU Set cannot start with a hyphen or comma');
+    return false;
+  } 
   
   ddClient.desktopUI.toast.success('Validated successfully.');
   return true;
@@ -92,6 +103,8 @@ async function runJMeter( testPlan: string,
                           jmeterPropertyFile1: string, jmeterPropertyFile2: string,
                           resultsPath: string, logsPath: string,
                           setIsTestRunning: boolean,
+                          cpus: string, 
+                          cpuSet: string,
                           onOutput: (output: string) => void
                           ) {
   
@@ -102,30 +115,6 @@ async function runJMeter( testPlan: string,
   const ddClient = useDockerDesktopClient(); 
 
   try {
-
-        // Check for volume path, if empty then exit        
-        // if (volumePath.length <= 0) {
-        //   ddClient.desktopUI.toast.warning('Volume path is empty.');
-        //   return;
-        // }
-
-        // Check whether user entered the image name or not
-        // if (imageName.length <= 0) {
-        //   ddClient.desktopUI.toast.warning('Image name is empty.');
-        //   return;
-        // }
-
-        // Check for testPlan, if empty then exit
-        // if (testPlan.length <= 0) {
-        //   ddClient.desktopUI.toast.warning('Test Plan is empty.');
-        //   return;
-        // }
-
-        // Check for logsPath, if empty then exit
-        // if (logsPath.length <= 0) {
-        //   ddClient.desktopUI.toast.warning('Logs path is empty.');
-        //   return;
-        // }
 
         // Check whether resultsPath contains an extension `.`
         if (resultsPath.includes('.')) {
@@ -151,23 +140,10 @@ async function runJMeter( testPlan: string,
         } else {
           ddClient.desktopUI.toast.warning('The specified Docker image could not be found. Please check if the image exists on Docker Hub or locally, and try again.');
         }
-        // if (output.stderr.includes('next')) {
-        //   ddClient.desktopUI.toast.success(output.stderr);
-        // }
-
-        // ddClient.desktopUI.toast.success(`Proxy Name: ${proxyName}`);
-        // ddClient.desktopUI.toast.success(`Proxy Port: ${proxyPort}`);
-
-        // Run JMeter Test inside a container  
-    
-        // let dockerArguments = `List of arguments: ${imageName} -v ${volumePath} \n`;
-        // ddClient.desktopUI.toast.success(dockerArguments);
-
+        
         // Get Container Volume Path by splitting the volume path using ':' as delimiter
         let volumePathArray = volumePath.split(':');
-        // for (let i = 0; i < volumePathArray.length; i++) {
-        //   ddClient.desktopUI.toast.success(volumePathArray[i]);
-        // }
+        
         let localResultsPath = volumePathArray[0];
         ddClient.desktopUI.toast.success(`Saving in path ${localResultsPath}`);
 
@@ -180,46 +156,65 @@ async function runJMeter( testPlan: string,
         let fullTestPath = `${containerVolumePath}\/${testPlanPath}`;
         ddClient.desktopUI.toast.success(`Full Test Path: ${fullTestPath}`);
         // ddClient.desktopUI.toast.success(fullTestPath);
-
-        // Prepare the base command arguments
-        let cmdArgs = [
+        
+        // Prepare the docker arguments
+        let dockerArgs = [
           "-d",
           "-v",
-          volumePath,
-          imageName,
+          volumePath,          
+        ];
+        // Push CPUs before imageName, if empty set to 1
+        if (cpus.length <= 0) {
+          cpus = '1';
+          dockerArgs.push("--cpus", cpus);
+        }
+        else {
+          dockerArgs.push("--cpus", cpus);
+        }
+
+        // Push image name
+        dockerArgs.push(imageName);
+
+        ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
+
+        // Prepare the JMeter arguments
+        let jMeterArgs = [
           "-n",
           "-t",
           fullTestPath,
-
         ];
 
         if (proxyName) {
-          cmdArgs.push("-H", proxyName);
+          jMeterArgs.push("-H", proxyName);
         }
         if (proxyPort) {
-          cmdArgs.push("-P", proxyPort);
+          jMeterArgs.push("-P", proxyPort);
         }
         if (userName) {
-          cmdArgs.push("-u", userName);
+          jMeterArgs.push("-u", userName);
         }
         if (password) {
-          cmdArgs.push("-a", password);
+          jMeterArgs.push("-a", password);
         }
         if (jmeterPropertyFile1) {
-          cmdArgs.push("-q", jmeterPropertyFile1);
+          jMeterArgs.push("-q", jmeterPropertyFile1);
         }
         if (jmeterPropertyFile2) {
-          cmdArgs.push("-q", jmeterPropertyFile2);
+          jMeterArgs.push("-q", jmeterPropertyFile2);
         }
         if (resultsPath) {
-          cmdArgs.push("-l", resultsPath);
-          cmdArgs.push("-e", "-o", reportPath);
+          jMeterArgs.push("-l", resultsPath);
+          jMeterArgs.push("-e", "-o", reportPath);
 
         }
         if (logsPath) {
-          cmdArgs.push("-j", logsPath);
+          jMeterArgs.push("-j", logsPath);
         }
-        ddClient.desktopUI.toast.success(`Command Arguments: ${cmdArgs}`);
+        ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
+        
+        // Combine the docker and JMeter arguments
+        let cmdArgs = dockerArgs.concat(jMeterArgs);
+        ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
 
         // Run JMeter Test inside a container       
         const runJMeterTestInsideAContainer = await ddClient.docker.cli.exec("run", cmdArgs);        
@@ -323,6 +318,8 @@ export function App() {
   const [logsPath, setLogsPath] = React.useState<string>();
   const [isTestRunning, setIsTestRunning] = React.useState<boolean>(false);
   
+  const [cpus, setCpus] = React.useState<string>();
+  const [cpuSet, setCpuSet] = React.useState<string>();  
 
   const [outputLogs, setOutputLogs] = React.useState('');
   const [running, setRunning] = React.useState<boolean>(false); 
@@ -384,7 +381,7 @@ export function App() {
             <Card variant="outlined">
               <CardContent>
                 <Grid item container columnSpacing={{ xs: 2 }}>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <ListAltIcon />
                         <Typography variant="h6" gutterBottom noWrap> Image and Volume
@@ -414,7 +411,7 @@ export function App() {
                         onChange={(vol) => setVolumePath(vol.target.value.trim())}
                       />
                   </Grid>                
-                  <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                  <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}} >
                       <Stack direction="row" alignItems="center" spacing={1}>
                         < CheckBoxIcon />
                         <Typography variant="h6" gutterBottom noWrap>
@@ -438,133 +435,184 @@ export function App() {
             </Card>
           </AccordionDetails>
       </Stack>
-      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
-          <AccordionDetails sx={{ width: '100%' }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Grid item container columnSpacing={{ xs: 2 }}>
-                  <Grid item xs={12} sm={4} width={ '100%'}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <ArticleIcon /> 
-                        <Typography variant="h6" gutterBottom noWrap> Property Files
-                        </Typography>
-                      </Stack>
-                      <TextField
-                          label="JMeter Properties 1"
-                          helperText="Add JMeter property file e.g. /jmeter-tests/loadtest.properties"
-                          fullWidth
-                          variant="outlined"
-                          minRows={1}
-                          placeholder='/jmeter-tests/loadtest.properties'
-                          defaultValue="/jmeter-tests/loadtest.properties"
-                          value={jmeterPropertyFile1 ?? ''}
-                          onChange={(jmProp1) => setJMeterPropertyFile1(jmProp1.target.value.trim())}
-                        /> 
-                      <TextField
-                        label="JMeter Properties 2"
-                        helperText="Add an additional JMeter property file"
-                        fullWidth
-                        variant="outlined"
-                        minRows={1}
-                        placeholder='/jmeter-tests/global.properties'
-                        value={jmeterPropertyFile2 ?? ''}
-                        onChange={(jmProp2) => setJMeterPropertyFile2(jmProp2.target.value.trim())}
-                        /> 
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                      <OutputIcon /> 
-                        <Typography variant="h6" gutterBottom noWrap>    
-                        Logs and Results                      
-                        </Typography>
-                      </Stack>  
-                      
+      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }} >
+        <AccordionDetails sx={{ width: '100%' }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Grid item container columnSpacing={{ xs: 2 }} >
+                <Grid item xs={12} sm={6} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <ArticleIcon /> 
+                      <Typography variant="h6" gutterBottom noWrap> 
+                        Property Files
+                      </Typography>
+                    </Stack>
                     <TextField
-                        label="Logs"
-                        helperText="Add Logs path e.g. /jmeter-tests/run.log"
+                        label="JMeter Properties 1"
+                        helperText="Add JMeter property file e.g. /jmeter-tests/loadtest.properties"
                         fullWidth
                         variant="outlined"
                         minRows={1}
-                        required
-                        defaultValue="/jmeter-logs/run.log"
-                        placeholder='/jmeter-logs/run.log'
-                        value={logsPath ?? ''}
-                        onChange={(logsPath) => setLogsPath(logsPath.target.value.trim())}
+                        placeholder='/jmeter-tests/loadtest.properties'
+                        defaultValue="/jmeter-tests/loadtest.properties"
+                        value={jmeterPropertyFile1 ?? ''}
+                        onChange={(jmProp1) => setJMeterPropertyFile1(jmProp1.target.value.trim())}
                       /> 
                     <TextField
-                      label="Results"
-                      helperText="Add Results path e.g. /jmeter-tests/result.jtl"
+                      label="JMeter Properties 2"
+                      helperText="Add an additional JMeter property file"
+                      fullWidth
+                      variant="outlined"
+                      minRows={1}
+                      placeholder='/jmeter-tests/global.properties'
+                      value={jmeterPropertyFile2 ?? ''}
+                      onChange={(jmProp2) => setJMeterPropertyFile2(jmProp2.target.value.trim())}
+                      /> 
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                    <OutputIcon /> 
+                      <Typography variant="h6" gutterBottom noWrap>    
+                      Logs and Results
+                      </Typography>
+                    </Stack>  
+                    
+                  <TextField
+                      label="Logs"
+                      helperText="Add Logs path e.g. /jmeter-tests/run.log"
                       fullWidth
                       variant="outlined"
                       minRows={1}
                       required
-                      defaultValue="/jmeter-logs/result.jtl"
-                      placeholder='/jmeter-logs/result.jtl'
-                      value={resultsPath ?? ''}
-                      onChange={(resultsPath) => setResultsPath(resultsPath.target.value.trim())}
-                      /> 
-                      
+                      defaultValue="/jmeter-logs/run.log"
+                      placeholder='/jmeter-logs/run.log'
+                      value={logsPath ?? ''}
+                      onChange={(logsPath) => setLogsPath(logsPath.target.value.trim())}
+                    /> 
+                  <TextField
+                    label="Results"
+                    helperText="Add Results path e.g. /jmeter-tests/result.jtl"
+                    fullWidth
+                    variant="outlined"
+                    minRows={1}
+                    required
+                    defaultValue="/jmeter-logs/result.jtl"
+                    placeholder='/jmeter-logs/result.jtl'
+                    value={resultsPath ?? ''}
+                    onChange={(resultsPath) => setResultsPath(resultsPath.target.value.trim())}
+                    /> 
+                    
+                </Grid>
+                <Grid item xs={12} sm={6} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <CompareArrowsIcon /> 
+                      <Typography variant="h6" gutterBottom noWrap>    
+                      Proxy                        
+                      </Typography>
+                    </Stack>
+                    {/* Add JMeter properties */}
+                      <TextField
+                        label="JMeter Proxy Host"
+                        helperText="Host name or IP address of the proxy server e.g. host.docker.internal"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        defaultValue="host.docker.internal"
+                        value={proxyName ?? ''}
+                        onChange={(proxy) => setProxyName(proxy.target.value.trim())}
+                      />
+                      <TextField
+                        label="JMeter Proxy Port"
+                        helperText="Port of the proxy server e.g. 80"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        defaultValue="80"                            
+                        value={proxyPort ?? ''}
+                        onChange={(portNumber) => setProxyPort(portNumber.target.value.trim())}
+                      />
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <PasswordIcon /> 
+                        <Typography variant="h6" gutterBottom noWrap>    
+                        Proxy Credentials                        
+                        </Typography>
+                      </Stack>                          
+                      {/* Add username and password for proxy */}
+                      <TextField
+                        label="JMeter Proxy Username"
+                        helperText="Username for the proxy server e.g. admin"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        defaultValue="naveenkumar"
+                        value={userName ?? ''}
+                        onChange={(user) => setUserName(user.target.value.trim())}
+                      />
+                      <TextField
+                        label="JMeter Proxy Password"
+                        helperText="Password for the proxy server e.g. supercrypticpassword"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        defaultValue="80"
+                        value={password ?? ''}
+                        onChange={(passwrd) => setPassword(passwrd.target.value.trim())}
+                        type="password"
+                      />
+                </Grid>                      
+              </Grid>                    
+            </CardContent>
+          </Card>
+        </AccordionDetails>
+        <AccordionDetails sx={{ width: '100%' }}>
+          <Card variant="outlined">
+            <CardContent>
+              <Grid item container columnSpacing={{ xs: 2 }}>                
+                  <Grid item xs={12} sm={6} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <AutoAwesomeMosaicIcon /> 
+                        <Typography variant="h6" gutterBottom noWrap>    
+                        Container CPU                        
+                        </Typography>
+                      </Stack>
+                      {/* Add JMeter properties */}
+                        <TextField
+                          label="CPUs"
+                          helperText="Available CPU resources a container e.g. 1.5"
+                          fullWidth
+                          variant="outlined"
+                          minRows={1}
+                          placeholder="1"
+                          defaultValue="1"
+                          value={cpus ?? ''}
+                          onChange={(cpus) => {
+                            let value = cpus.target.value.trim();
+                            if (/^\d*\.?\d*$/.test(value)) {
+                              setCpus(value);
+                            }                            
+                          }}
+                        />
+                        <TextField
+                          label="CPU Set"
+                          helperText="Limit the CPUs or cores a container can use e.g. 0-3, 0,1"
+                          fullWidth
+                          variant="outlined"
+                          minRows={1}
+                          value={cpuSet ?? ''}
+                          onChange={(cpuSet) => {
+                            // reg ex to accept only numbers and comma or hyphen or space between numbers, user should be able to type only numbers, comma, hyphen and space
+                            let value = cpuSet.target.value.trim();
+                            if (/^[0-9,\-\s]*$/.test(value)) {
+                              setCpuSet(value);
+                            }
+                            
+                          }}
+                        />                        
                   </Grid>
-                  <Grid item xs={12} sm={4} width={ '100%'}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <CompareArrowsIcon /> 
-                          <Typography variant="h6" gutterBottom noWrap>    
-                          Proxy                        
-                          </Typography>
-                        </Stack>
-                        {/* Add JMeter properties */}
-                          <TextField
-                            label="JMeter Proxy Host"
-                            helperText="Host name or IP address of the proxy server e.g. host.docker.internal"
-                            fullWidth
-                            variant="outlined"
-                            minRows={1}
-                            defaultValue="host.docker.internal"
-                            value={proxyName ?? ''}
-                            onChange={(proxy) => setProxyName(proxy.target.value.trim())}
-                          />
-                          <TextField
-                            label="JMeter Proxy Port"
-                            helperText="Port of the proxy server e.g. 80"
-                            fullWidth
-                            variant="outlined"
-                            minRows={1}
-                            defaultValue="80"
-                            value={proxyPort ?? ''}
-                            onChange={(portNumber) => setProxyPort(portNumber.target.value.trim())}
-                          />
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <PasswordIcon /> 
-                            <Typography variant="h6" gutterBottom noWrap>    
-                            Proxy Credentials                        
-                            </Typography>
-                          </Stack>                          
-                          {/* Add username and password for proxy */}
-                          <TextField
-                            label="JMeter Proxy Username"
-                            helperText="Username for the proxy server e.g. admin"
-                            fullWidth
-                            variant="outlined"
-                            minRows={1}
-                            defaultValue="naveenkumar"
-                            value={userName ?? ''}
-                            onChange={(user) => setUserName(user.target.value.trim())}
-                          />
-                          <TextField
-                            label="JMeter Proxy Password"
-                            helperText="Password for the proxy server e.g. supercrypticpassword"
-                            fullWidth
-                            variant="outlined"
-                            minRows={1}
-                            defaultValue="80"
-                            value={password ?? ''}
-                            onChange={(passwrd) => setPassword(passwrd.target.value.trim())}
-                            type="password"
-                          />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-            </Card>
-          </AccordionDetails>
-      </Stack>
+                </Grid>
+              </CardContent>
+          </Card>
+        </AccordionDetails>
+      </Stack>        
+      
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
           <Stack direction="row" spacing={2}>
@@ -572,14 +620,15 @@ export function App() {
               onClick={() => {
                 clearTextFields();
                 // setIsTestRunning(true);
-                if (validateInputs(imageName || '', testPlan || '', volumePath || '', resultsPath || '', logsPath || '') == true){
+                if (validateInputs(imageName || '', testPlan || '', volumePath || '', resultsPath || '', logsPath || '', cpus || '', cpuSet || '') == true){
                   setIsTestRunning(true);
                   runJMeter(testPlan || '', imageName || '', volumePath || '', 
                             proxyName || '', proxyPort || '', 
                             userName || '', password || '', 
                             jmeterPropertyFile1 || '', jmeterPropertyFile2 || '',
-                            resultsPath || '', logsPath || '', 
+                            resultsPath || '', logsPath || '',                             
                             true,
+                            cpus || '', cpuSet || '',
                             (output) => {
                               setOutputLogs(prevOutput => prevOutput + '\n' + output);
                             }
