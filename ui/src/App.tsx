@@ -171,10 +171,12 @@ async function runJMeter( testPlan: string,
         else {
           dockerArgs.push("--cpus", cpus);
         }
+        if (cpuSet.length > 0) {
+          dockerArgs.push("--cpuset-cpus", cpuSet);
+        }
 
         // Push image name
         dockerArgs.push(imageName);
-
         ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
 
         // Prepare the JMeter arguments
