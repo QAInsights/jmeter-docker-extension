@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { validateMemory, validateMemoryReservation } from './validateMemory';
 import IntroDialog from './IntroDialog'; 
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
@@ -13,6 +14,7 @@ import PasswordIcon from '@mui/icons-material/Password';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import CoffeeIcon from '@mui/icons-material/Coffee';
+import MemoryIcon from '@mui/icons-material/Memory';
 import darklogo from '../apache-jmeter-logo-dark.svg';
 import lightlogo from '../apache-jmeter-logo-light.svg';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
@@ -27,6 +29,8 @@ import {
   Checkbox,
   Box,
   Stack,
+  FormGroup,
+  FormControlLabel,
 } from "@mui/material";
 
 const client = createDockerDesktopClient();
@@ -53,9 +57,13 @@ async function terminateContainer(containerId: string) {
       console.error(error);
     }
 }
+
 function validateInputs(imageName: string, testPlan: string, volumePath: string, 
                         resultsPath: string, logsPath: string,
-                        setCpus: string, setCpuSet: string) {
+                        setCpus: string, setCpuSet: string,
+                        setMem: string, setMemreserve: string, 
+                        setKernelMem: string, setOomKillDisable: boolean) {
+  
   const ddClient = useDockerDesktopClient(); 
 
   // Check for required fields, if empty then exit  
@@ -80,8 +88,8 @@ function validateInputs(imageName: string, testPlan: string, volumePath: string,
     return false;
   }
   else if(!resultsPath.includes('.')) {
-      ddClient.desktopUI.toast.warning('Results path must contain a file with an extension.');
-      return false;    
+    ddClient.desktopUI.toast.warning('Results path must contain a file with an extension.');
+    return false;    
   }
   if (setCpuSet.trim().endsWith('-') || setCpuSet.trim().endsWith(',')) {
     ddClient.desktopUI.toast.warning('CPU Set cannot end with a hyphen or comma');
@@ -92,10 +100,49 @@ function validateInputs(imageName: string, testPlan: string, volumePath: string,
     return false;
   } 
   
+  // Check if memory is ending with b, k, m, g or not
+  if (setMem.trim().length === 1 || setMemreserve.trim().length === 1 || setKernelMem.trim().length === 1) {
+    const validEndings = ['b', 'k', 'm', 'g'];
+    const invalidMem = !validEndings.includes(setMem.trim().slice(-1));
+    const invalidMemReserve = !validEndings.includes(setMemreserve.trim().slice(-1));
+    const invalidKernelMem = !validEndings.includes(setKernelMem.trim().slice(-1));
+    
+    if (invalidMem || invalidMemReserve || invalidKernelMem) {
+      ddClient.desktopUI.toast.warning('Memory must end with b, k, m, or g');
+      return false;
+    }
+  }
+
+  if (setMem.length >= 2) {
+    // Check if memory is at least 6m or 6000000b or 6000k or 0.006g
+    if (!(validateMemory(setMem))) {
+      ddClient.desktopUI.toast.warning(setMem);
+      ddClient.desktopUI.toast.warning('Memory must be at least 6m or 6000000b or 6000k or 0.006g');
+      return false;
+    }
+  }
+  
+  if (setMemreserve.length >= 2) {
+    // Memory Reserve should be less than Memory
+    if (!(validateMemoryReservation(setMem, setMemreserve))) {
+      ddClient.desktopUI.toast.warning('Memory Reservation must be less than Memory');
+      return false;
+    }
+  }
+
+  if (setKernelMem.length >= 2) {
+    // Check if kernel memory is less than memory
+    if (!(validateMemory(setKernelMem))) {
+      ddClient.desktopUI.toast.warning('Kernel Memory must be at least 6m or 6000000b or 6000k or 0.006g');
+      return false;
+    }
+  }
+  ddClient.desktopUI.toast.success(setOomKillDisable.valueOf().toString())
   ddClient.desktopUI.toast.success('Validated successfully.');
   return true;
-  
+ 
 }
+
 async function runJMeter( testPlan: string, 
                           imageName: string, 
                           volumePath: string, proxyName: string, 
@@ -105,6 +152,8 @@ async function runJMeter( testPlan: string,
                           setIsTestRunning: boolean,
                           cpus: string, 
                           cpuSet: string,
+                          mem: string, memreserve: string, 
+                          kernelmem: string, oomkilldisable: boolean,
                           onOutput: (output: string) => void
                           ) {
   
@@ -173,6 +222,18 @@ async function runJMeter( testPlan: string,
         }
         if (cpuSet.length > 0) {
           dockerArgs.push("--cpuset-cpus", cpuSet);
+        }
+        if (mem.length >= 2) {
+          dockerArgs.push("--memory", mem);
+        }
+        if (memreserve.length >= 2) {
+          dockerArgs.push("--memory-reservation", memreserve);
+        }
+        if (kernelmem.length >= 2) {
+          dockerArgs.push("--kernel-memory", kernelmem);
+        }
+        if (oomkilldisable) {
+          dockerArgs.push("--oom-kill-disable");
         }
 
         // Push image name
@@ -322,6 +383,11 @@ export function App() {
   
   const [cpus, setCpus] = React.useState<string>();
   const [cpuSet, setCpuSet] = React.useState<string>();  
+
+  const [mem, setMem] = React.useState<string>();
+  const [memreserve, setMemoryReserve] = React.useState<string>();
+  const [kernelmem, setKernelMem] = React.useState<string>();
+  const [oomkilldisable, setOomKillDisable] = React.useState<boolean>(false);
 
   const [outputLogs, setOutputLogs] = React.useState('');
   const [running, setRunning] = React.useState<boolean>(false); 
@@ -605,10 +671,85 @@ export function App() {
                             if (/^[0-9,\-\s]*$/.test(value)) {
                               setCpuSet(value);
                             }
-                            
                           }}
                         />                        
                   </Grid>
+                  <Grid item xs={12} sm={6} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <MemoryIcon /> 
+                      <Typography variant="h6" gutterBottom noWrap>    
+                      Container Memory                        
+                      </Typography>
+                    </Stack>
+                    {/* Add Container Memory Settings properties */}
+                      <TextField
+                        label="Memory"
+                        helperText="Maximum amount of memory the container can use e.g. 6m"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        placeholder='6m'
+                        value={mem ?? ''}
+                        onChange={ (mem) => {
+                          // accept only numbers ending with b, k, m, g
+                          let value = mem.target.value.trim();
+                          if (/^\d*[bkmg]?$/.test(value)) {
+                            setMem(value);
+                          }
+                        }}
+                      />
+                      <TextField
+                        label="Memory Reservation"
+                        helperText="Specify a soft limit smaller than memory e.g. 4m"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        placeholder='4m'                        
+                        value={memreserve ?? ''}
+                        onChange={ (memreserve) => {
+                          // accept only numbers ending with b, k, m, g
+                          let value = memreserve.target.value.trim();
+                          if (/^\d*[bkmg]?$/.test(value)) {
+                            setMemoryReserve(value);
+                          }
+                        }}                      
+                      />
+                      <TextField
+                        label="Kernel Memory"
+                        helperText="Maximum amount of kernel memory the container can use e.g. 6m"
+                        fullWidth
+                        variant="outlined"
+                        minRows={1}
+                        placeholder='6m'
+                        value={kernelmem ?? ''}
+                        onChange={ (kernelmem) => {
+                          // accept only numbers ending with b, k, m, g
+                          let value = kernelmem.target.value.trim();
+                          if (/^\d*[bkmg]?$/.test(value)) {
+                            setKernelMem(value);
+                          }                    
+                        }}
+                      />
+                      {/* Add checkbox to enable/disable oom-kill-disable */}
+                      <FormGroup>
+                        <FormControlLabel 
+                        name='oom-kill-disable'
+                        control={<Checkbox />} 
+                        label="OOM Kill Disable" 
+                        onChange={ (oomkilldisable) => {
+                          const isChecked = (oomkilldisable.target as HTMLInputElement).checked;
+                          if (isChecked) {
+                            setOomKillDisable(true);
+                          }
+                          else {
+                            setOomKillDisable(false);
+                          }
+                          }                          
+                        }
+                        />
+                      </FormGroup>
+                      
+                </Grid>   
                 </Grid>
               </CardContent>
           </Card>
@@ -622,7 +763,7 @@ export function App() {
               onClick={() => {
                 clearTextFields();
                 // setIsTestRunning(true);
-                if (validateInputs(imageName || '', testPlan || '', volumePath || '', resultsPath || '', logsPath || '', cpus || '', cpuSet || '') == true){
+                if (validateInputs(imageName || '', testPlan || '', volumePath || '', resultsPath || '', logsPath || '', cpus || '', cpuSet || '', mem || '', memreserve || '', kernelmem || '', oomkilldisable || false) == true){
                   setIsTestRunning(true);
                   runJMeter(testPlan || '', imageName || '', volumePath || '', 
                             proxyName || '', proxyPort || '', 
@@ -631,6 +772,8 @@ export function App() {
                             resultsPath || '', logsPath || '',                             
                             true,
                             cpus || '', cpuSet || '',
+                            mem || '', memreserve || '', kernelmem || '', 
+                            oomkilldisable || false,
                             (output) => {
                               setOutputLogs(prevOutput => prevOutput + '\n' + output);
                             }
@@ -751,4 +894,3 @@ export function App() {
 function exec(cmd: string, arg1: (error: any, stdout: any, stderr: any) => void) {
   throw new Error('Function not implemented.');
 }
-
