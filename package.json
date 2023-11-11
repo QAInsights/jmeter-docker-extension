@@ -3,6 +3,8 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.16",
-    "@mui/material": "^5.14.16"
+    "@mui/material": "^5.14.16",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0"
   }
 }
