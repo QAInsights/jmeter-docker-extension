@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import DisplayLineChartTimeSeriesThreads from './PerformanceCharts';
 import { validateMemory, validateMemoryReservation } from './validateMemory';
 import IntroDialog from './IntroDialog'; 
 import Button from '@mui/material/Button';
@@ -35,6 +36,7 @@ import {
 
 const client = createDockerDesktopClient();
 let containerId = '';
+let timeAndActiveThreads: string[] = [];
 
 function useDockerDesktopClient() {
   return client;
@@ -142,6 +144,31 @@ function validateInputs(imageName: string, testPlan: string, volumePath: string,
  
 }
 
+// async function extractActiveThreadsAndTime(output: string) {
+//   // Sample output from JMeter
+//   // summary +     79 in 00:00:18 =    4.5/s Avg:   220 Min:   102 Max:   353 Err:     0 (0.00%) Active: 1 Started: 1 Finished: 0
+
+//   let activeThreads = output.match(/(?<=Active:)(.*)(?=Started)/g);
+//   let time = output.match(/(?<=summary \+)(.*)(?=in)/g);
+
+//   const ddClient = useDockerDesktopClient();
+
+//   ddClient.desktopUI.toast.success(`Active Threads: ${activeThreads}`);
+
+//   // Put time and active threads in a two dimensional array
+  
+//   if (time) {
+//     timeAndActiveThreads.push(time[0]);
+//     ddClient.desktopUI.toast.success(`Time and Active Threads: ${timeAndActiveThreads}`);
+//   }
+//   if (activeThreads) {
+//     timeAndActiveThreads.push(activeThreads[0]);
+//     ddClient.desktopUI.toast.success(`Time and Active Threads: ${timeAndActiveThreads}`);
+//   }
+  
+//   return timeAndActiveThreads;
+
+// }
 async function runJMeter( testPlan: string, 
                           imageName: string, 
                           volumePath: string, proxyName: string, 
@@ -389,6 +416,8 @@ export function App() {
   const [oomkilldisable, setOomKillDisable] = React.useState<boolean>(false);
 
   const [outputLogs, setOutputLogs] = React.useState('');
+  const [chartData, setChartData] = React.useState({ labels: [], datasets: [] });
+
   const [running, setRunning] = React.useState<boolean>(false); 
 
   const outputLogsRef = useRef<HTMLTextAreaElement>(null);
@@ -420,6 +449,32 @@ export function App() {
       url
     );
   };
+
+  function extractActiveThreadsAndTime(output: any) {
+    const timeMatch = output.match(/in (\d\d:\d\d:\d\d)/);
+    const activeMatch = output.match(/Active: (\d+)/);
+  
+    if (timeMatch && activeMatch) {
+      const time = timeMatch[1];
+      const active = activeMatch[1];
+
+      const data = {
+        labels: [...timeAndActiveThreads, time],
+        datasets: [
+          {
+            label: 'Dataset 1',
+            data: [...timeAndActiveThreads, active],
+            fill: false,
+            backgroundColor: 'rgb(255, 99, 132)',
+            borderColor: 'rgba(255, 99, 132, 0.2)',
+          },
+        ],
+      };
+       
+  
+    }
+  }
+  
 
   return (
     <>
@@ -775,6 +830,7 @@ export function App() {
                             oomkilldisable || false,
                             (output) => {
                               setOutputLogs(prevOutput => prevOutput + '\n' + output);
+                              extractActiveThreadsAndTime(output);
                             }
                   );
                 }
@@ -815,8 +871,16 @@ export function App() {
             }}
           />
         </AccordionDetails>
+        
       </Stack> 
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
+        {/* Display the line charts */}
+      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
+        <AccordionDetails sx={{ width: '100%' }}>
+          <DisplayLineChartTimeSeriesThreads data={chartData} />
+        </AccordionDetails>        
+      </Stack>
+
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
             <Grid container style={{ padding: "4rem", width: "100%" }}>
               <Box
