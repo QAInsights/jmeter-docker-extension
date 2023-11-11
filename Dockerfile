@@ -21,6 +21,7 @@ ARG DESCRIPTION_LONG="<h1>Apache JMeter Docker Extension</h1> \
 <li>Mount volume for easy management</li> \
 <li>Supports property files</li> \
 <li>Supports proxy configuration</li> \
+<li>Supports container memory and CPU configuration</li> \
 <li>Generates logs and results</li> \
 <li>Intuitive HTML report</li> \
 <li>Displays runtime console logs</li> \
@@ -42,8 +43,8 @@ ARG ADDITIONAL_URLS='[ \
                     { "title": "YouTube", "url": "https://youtube.com/qainsights" } \
                     ]'
 ARG CHANGELOG='<p>Extension changelog:</p> <ul> \
-<li>Update intro video tutorial</li> \
-<li>Update screenshots</li> \
+<li>📦 NEW: Container CPU and Memory settings</li> \
+<li>✅ FIX: Minor validation issues</li> \
 </ul>'
 
 ARG CATEGORIES='testing-tools'
