@@ -137,7 +137,6 @@ function validateInputs(imageName: string, testPlan: string, volumePath: string,
       return false;
     }
   }
-  ddClient.desktopUI.toast.success(setOomKillDisable.valueOf().toString())
   ddClient.desktopUI.toast.success('Validated successfully.');
   return true;
  
@@ -238,7 +237,7 @@ async function runJMeter( testPlan: string,
 
         // Push image name
         dockerArgs.push(imageName);
-        ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
+        //ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
 
         // Prepare the JMeter arguments
         let jMeterArgs = [
@@ -273,11 +272,11 @@ async function runJMeter( testPlan: string,
         if (logsPath) {
           jMeterArgs.push("-j", logsPath);
         }
-        ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
+        //ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
         
         // Combine the docker and JMeter arguments
         let cmdArgs = dockerArgs.concat(jMeterArgs);
-        ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
+        //ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
 
         // Run JMeter Test inside a container       
         const runJMeterTestInsideAContainer = await ddClient.docker.cli.exec("run", cmdArgs);        
