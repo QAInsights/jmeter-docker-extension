@@ -12,6 +12,7 @@ Run your JMeter load tests without installing JMeter in your local inside Docker
 ✅ Mount volume for easy management  
 ✅ Supports property files  
 ✅ Supports proxy configuration  
+✅ Support container memory and CPU settings 
 ✅ Generates logs and results  
 ✅ Intuitive HTML report  
 ✅ Displays runtime console logs  
