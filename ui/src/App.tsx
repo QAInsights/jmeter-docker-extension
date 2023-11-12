@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import PrepareChartData from './PreparaChartData';
-import DisplayLineChartTimeSeriesThreads from './PerformanceCharts';
-
+import { ChartData } from "./ChartData";
+import { PrepareChartData, PrepareSamplesData } from './PrepareChartData';
+import { DisplayLineChartTimeSeriesThreads, DisplayLineChartTimeSeriesTransactions} from './PerformanceCharts';
 import { validateMemory, validateMemoryReservation } from './validateMemory';
+
 import IntroDialog from './IntroDialog'; 
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
@@ -35,11 +36,22 @@ import {
   FormGroup,
   FormControlLabel,
 } from "@mui/material";
-import PerformanceCharts from './PerformanceCharts';
+
+const options = {
+  plugins: {
+    zoom: {
+      zoom: {
+        wheel: {
+          enabled: true,
+        }
+      },  
+      mode: 'xy',    
+    },
+  },
+};
 
 const client = createDockerDesktopClient();
 let containerId = '';
-let timeAndActiveThreads: string[] = [];
 
 function useDockerDesktopClient() {
   return client;
@@ -395,17 +407,6 @@ async function runJMeter( testPlan: string,
   
 }
 
-interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    fill: boolean;
-    backgroundColor: string;
-    borderColor: string;
-  }[];
-};
-
 export function App() {
   const [response, setResponse] = React.useState<string>();
   const [imageName, setImageName] = React.useState('qainsights/jmeter:latest');
@@ -431,7 +432,7 @@ export function App() {
 
   const [outputLogs, setOutputLogs] = React.useState('');
   const [chartData, setChartData] = React.useState<ChartData>({ labels: [], datasets: [] });
-
+  const [chartSamplesData, setChartSamplesData] = React.useState<ChartData>({ labels: [], datasets: [] });
 
   const [running, setRunning] = React.useState<boolean>(false); 
 
@@ -469,7 +470,6 @@ export function App() {
   return (
     <>
      <IntroDialog /> 
-
       <br />
       <br />
       <div style={{textAlign: 'center'}}>
@@ -820,29 +820,12 @@ export function App() {
                             oomkilldisable || false,
                             (output) => {
                               setOutputLogs(prevOutput => prevOutput + '\n' + output); 
-                              PrepareChartData(output, chartData, setChartData);                              
-                            //   const timeMatch = output.match(/in (\d\d:\d\d:\d\d)/);
-                            //   const activeMatch = output.match(/Active: (\d+)/);
-                            //   if (timeMatch && activeMatch) {
-                            //     const time = timeMatch[1];
-                            //     const active = activeMatch[1];
-                            //     ddClient.desktopUI.toast.success(`Time: ${time} Active: ${active}`);
-                                
-                                
-                            //     setChartData(prevData => ({
-                            //       labels: [...prevData.labels, time],
-                            //       datasets: [
-                            //         {
-                            //           label: 'Active Threads',
-                            //           data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(active)] : [Number(active)],
-                            //           fill: false,
-                            //           backgroundColor: 'rgb(255, 99, 132)',
-                            //           borderColor: 'rgba(255, 99, 132, 0.2)',
-                            //         },
-                            //       ],
-                            //   }));
+                              async function handleDataPreparation() {
+                                PrepareChartData(output, chartData, setChartData);
+                                PrepareSamplesData(output, chartSamplesData, setChartSamplesData);
+                              }
                               
-                            // }                              
+                              handleDataPreparation();                                                   
                           }                          
                   );
                 }
@@ -889,9 +872,14 @@ export function App() {
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%' }}>
           <div>
-              <DisplayLineChartTimeSeriesThreads data={chartData} options={null} />
+              <DisplayLineChartTimeSeriesThreads data={chartData} options={options}/>
           </div>
-        </AccordionDetails>        
+        </AccordionDetails>
+        <AccordionDetails sx={{ width: '100%' }}>
+          <div>
+              <DisplayLineChartTimeSeriesTransactions data={chartSamplesData} options={options}/>
+          </div>
+        </AccordionDetails>
       </Stack>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
