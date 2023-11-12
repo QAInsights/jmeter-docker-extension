@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import PrepareChartData from './PreparaChartData';
 import DisplayLineChartTimeSeriesThreads from './PerformanceCharts';
+
 import { validateMemory, validateMemoryReservation } from './validateMemory';
 import IntroDialog from './IntroDialog'; 
 import Button from '@mui/material/Button';
@@ -33,6 +35,7 @@ import {
   FormGroup,
   FormControlLabel,
 } from "@mui/material";
+import PerformanceCharts from './PerformanceCharts';
 
 const client = createDockerDesktopClient();
 let containerId = '';
@@ -190,160 +193,159 @@ async function runJMeter( testPlan: string,
   const ddClient = useDockerDesktopClient(); 
 
   try {
-
-        // Check whether resultsPath contains an extension `.`
-        if (resultsPath.includes('.')) {
-          // Split resultsPath to get the results file name
-          let resultsPathArray = resultsPath.split('.');
-          resultsPath = resultsPathArray[0] + '-' + resultsId + '.' + resultsPathArray[1];      
-        }
-        else {
-          ddClient.desktopUI.toast.warning('Results must contain a file with extension.');
-          return;
-        }
+      // Check whether resultsPath contains an extension `.`
+      if (resultsPath.includes('.')) {
+        // Split resultsPath to get the results file name
+        let resultsPathArray = resultsPath.split('.');
+        resultsPath = resultsPathArray[0] + '-' + resultsId + '.' + resultsPathArray[1];      
+      }
+      else {
+        ddClient.desktopUI.toast.warning('Results must contain a file with extension.');
+        return;
+      }
 
         // Pull JMeter Image
-        const output = await ddClient.docker.cli.exec("pull", [
-          imageName
-        ]);
-        
-        // ddClient.desktopUI.toast.success(`Out ${output.stdout}`);
-        // ddClient.desktopUI.toast.success(`Err ${output.stderr}`);
+      const output = await ddClient.docker.cli.exec("pull", [
+        imageName
+      ]);
+      
+      // ddClient.desktopUI.toast.success(`Out ${output.stdout}`);
+      // ddClient.desktopUI.toast.success(`Err ${output.stderr}`);
 
-        if (output.stdout.includes('up to date')) {
-          ddClient.desktopUI.toast.success('JMeter image pulled successfully and it is up to date.');
-        } else {
-          ddClient.desktopUI.toast.warning('The specified Docker image could not be found. Please check if the image exists on Docker Hub or locally, and try again.');
-        }
-        
-        // Get Container Volume Path by splitting the volume path using ':' as delimiter
-        let volumePathArray = volumePath.split(':');
-        
-        let localResultsPath = volumePathArray[0];
-        ddClient.desktopUI.toast.success(`Saving in path ${localResultsPath}`);
+      if (output.stdout.includes('up to date')) {
+        ddClient.desktopUI.toast.success('JMeter image pulled successfully and it is up to date.');
+      } else {
+        ddClient.desktopUI.toast.warning('The specified Docker image could not be found. Please check if the image exists on Docker Hub or locally, and try again.');
+      }
+      
+      // Get Container Volume Path by splitting the volume path using ':' as delimiter
+      let volumePathArray = volumePath.split(':');
+      
+      let localResultsPath = volumePathArray[0];
+      ddClient.desktopUI.toast.success(`Saving in path ${localResultsPath}`);
 
-        let containerVolumePath = volumePathArray[1];
-        // ddClient.desktopUI.toast.success(`Final path ${containerVolumePath}`);
-        
-        let testPlanPath = testPlan.split('/').pop();
-        ddClient.desktopUI.toast.success(`Test Plan Path: ${testPlanPath}`);
+      let containerVolumePath = volumePathArray[1];
+      // ddClient.desktopUI.toast.success(`Final path ${containerVolumePath}`);
+      
+      let testPlanPath = testPlan.split('/').pop();
+      ddClient.desktopUI.toast.success(`Test Plan Path: ${testPlanPath}`);
 
-        let fullTestPath = `${containerVolumePath}\/${testPlanPath}`;
-        ddClient.desktopUI.toast.success(`Full Test Path: ${fullTestPath}`);
-        // ddClient.desktopUI.toast.success(fullTestPath);
-        
-        // Prepare the docker arguments
-        let dockerArgs = [
-          "-d",
-          "-v",
-          volumePath,          
-        ];
-        // Push CPUs before imageName, if empty set to 1
-        if (cpus.length <= 0) {
-          cpus = '1';
-          dockerArgs.push("--cpus", cpus);
-        }
-        else {
-          dockerArgs.push("--cpus", cpus);
-        }
-        if (cpuSet.length > 0) {
-          dockerArgs.push("--cpuset-cpus", cpuSet);
-        }
-        if (mem.length >= 2) {
-          dockerArgs.push("--memory", mem);
-        }
-        if (memreserve.length >= 2) {
-          dockerArgs.push("--memory-reservation", memreserve);
-        }
-        if (kernelmem.length >= 2) {
-          dockerArgs.push("--kernel-memory", kernelmem);
-        }
-        if (oomkilldisable) {
-          dockerArgs.push("--oom-kill-disable");
-        }
+      let fullTestPath = `${containerVolumePath}\/${testPlanPath}`;
+      ddClient.desktopUI.toast.success(`Full Test Path: ${fullTestPath}`);
+      // ddClient.desktopUI.toast.success(fullTestPath);
+      
+      // Prepare the docker arguments
+      let dockerArgs = [
+        "-d",
+        "-v",
+        volumePath,          
+      ];
+      // Push CPUs before imageName, if empty set to 1
+      if (cpus.length <= 0) {
+        cpus = '1';
+        dockerArgs.push("--cpus", cpus);
+      }
+      else {
+        dockerArgs.push("--cpus", cpus);
+      }
+      if (cpuSet.length > 0) {
+        dockerArgs.push("--cpuset-cpus", cpuSet);
+      }
+      if (mem.length >= 2) {
+        dockerArgs.push("--memory", mem);
+      }
+      if (memreserve.length >= 2) {
+        dockerArgs.push("--memory-reservation", memreserve);
+      }
+      if (kernelmem.length >= 2) {
+        dockerArgs.push("--kernel-memory", kernelmem);
+      }
+      if (oomkilldisable) {
+        dockerArgs.push("--oom-kill-disable");
+      }
 
-        // Push image name
-        dockerArgs.push(imageName);
-        //ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
+      // Push image name
+      dockerArgs.push(imageName);
+      //ddClient.desktopUI.toast.success(`Docker Command Arguments: ${dockerArgs}`);
 
-        // Prepare the JMeter arguments
-        let jMeterArgs = [
-          "-n",
-          "-t",
-          fullTestPath,
-        ];
+      // Prepare the JMeter arguments
+      let jMeterArgs = [
+        "-n",
+        "-t",
+        fullTestPath,
+      ];
 
-        if (proxyName) {
-          jMeterArgs.push("-H", proxyName);
-        }
-        if (proxyPort) {
-          jMeterArgs.push("-P", proxyPort);
-        }
-        if (userName) {
-          jMeterArgs.push("-u", userName);
-        }
-        if (password) {
-          jMeterArgs.push("-a", password);
-        }
-        if (jmeterPropertyFile1) {
-          jMeterArgs.push("-q", jmeterPropertyFile1);
-        }
-        if (jmeterPropertyFile2) {
-          jMeterArgs.push("-q", jmeterPropertyFile2);
-        }
-        if (resultsPath) {
-          jMeterArgs.push("-l", resultsPath);
-          jMeterArgs.push("-e", "-o", reportPath);
+      if (proxyName) {
+        jMeterArgs.push("-H", proxyName);
+      }
+      if (proxyPort) {
+        jMeterArgs.push("-P", proxyPort);
+      }
+      if (userName) {
+        jMeterArgs.push("-u", userName);
+      }
+      if (password) {
+        jMeterArgs.push("-a", password);
+      }
+      if (jmeterPropertyFile1) {
+        jMeterArgs.push("-q", jmeterPropertyFile1);
+      }
+      if (jmeterPropertyFile2) {
+        jMeterArgs.push("-q", jmeterPropertyFile2);
+      }
+      if (resultsPath) {
+        jMeterArgs.push("-l", resultsPath);
+        jMeterArgs.push("-e", "-o", reportPath);
 
-        }
-        if (logsPath) {
-          jMeterArgs.push("-j", logsPath);
-        }
-        //ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
-        
-        // Combine the docker and JMeter arguments
-        let cmdArgs = dockerArgs.concat(jMeterArgs);
-        //ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
+      }
+      if (logsPath) {
+        jMeterArgs.push("-j", logsPath);
+      }
+      //ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
+      
+      // Combine the docker and JMeter arguments
+      let cmdArgs = dockerArgs.concat(jMeterArgs);
+      //ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
 
-        // Run JMeter Test inside a container       
-        const runJMeterTestInsideAContainer = await ddClient.docker.cli.exec("run", cmdArgs);        
+      // Run JMeter Test inside a container       
+      const runJMeterTestInsideAContainer = await ddClient.docker.cli.exec("run", cmdArgs);        
 
-        // Check for container ID, if empty then exit
-        if (runJMeterTestInsideAContainer.stdout) {
-          ddClient.desktopUI.toast.success(`Container ID is ${runJMeterTestInsideAContainer.stdout}`);   
-          containerId = runJMeterTestInsideAContainer.stdout.trim();     
-        }
-        if (runJMeterTestInsideAContainer.stderr){
-          ddClient.desktopUI.toast.error(`Error creating container ${runJMeterTestInsideAContainer.stderr} please check Docker daemon logs.`);
-          return;
-        }     
-        
-        // Follow the logs of the container
-        let containerArgs = [
-          "-f"
-        ];
+      // Check for container ID, if empty then exit
+      if (runJMeterTestInsideAContainer.stdout) {
+        ddClient.desktopUI.toast.success(`Container ID is ${runJMeterTestInsideAContainer.stdout}`);   
+        containerId = runJMeterTestInsideAContainer.stdout.trim();     
+      }
+      if (runJMeterTestInsideAContainer.stderr){
+        ddClient.desktopUI.toast.error(`Error creating container ${runJMeterTestInsideAContainer.stderr} please check Docker daemon logs.`);
+        return;
+      }     
+      
+      // Follow the logs of the container
+      let containerArgs = [
+        "-f"
+      ];
 
-        containerArgs.push(runJMeterTestInsideAContainer.stdout.trim());
+      containerArgs.push(runJMeterTestInsideAContainer.stdout.trim());
 
-        // Stream docker logs
-        const getLogs = await ddClient.docker.cli.exec("logs", containerArgs, {
-          stream: {
-            onOutput(data): void {
-                if (data.stdout) {
-                  onOutput("🖨️ " + data.stdout);
-                }
-                if (data.stderr) {
-                  onOutput("🛑 " + data.stderr);
-                }               
-            },
-            onError(error: any): void {
-              console.error(error);
-            },
-            onClose(exitCode: number): void {
-              console.log("onClose with exit code " + exitCode);
-            },
-        },
-      });
+      // Stream docker logs
+      const getLogs = await ddClient.docker.cli.exec("logs", containerArgs, {
+        stream: {
+          onOutput(data): void {
+              if (data.stdout) {
+                onOutput("🖨️ " + data.stdout);
+              }
+              if (data.stderr) {
+                onOutput("🛑 " + data.stderr);
+              }               
+          },
+          onError(error: any): void {
+            console.error(error);
+          },
+          onClose(exitCode: number): void {
+            console.log("onClose with exit code " + exitCode);
+          },
+      },
+    });
       //   const getLogs = await ddClient.docker.cli.exec("logs", containerArgs, {
         //     stream: {
         //       onOutput(data): void {
@@ -365,32 +367,44 @@ async function runJMeter( testPlan: string,
         //       },
         //   },
         // });
-      const isContainerRunning = async (containerId: string) => {
-        const { stdout } = await ddClient.docker.cli.exec("inspect", ["-f", "{{.State.Running}}", containerId]);
-        return stdout.trim() === 'true';
-      };
-      // Check every second if container is still running
-      let isRunning = await isContainerRunning(containerId);
-      
-      while (isRunning) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        isRunning = await isContainerRunning(containerId);
-        // ddClient.desktopUI.toast.success(`Container is running ${isRunning}`);
-      }
-      setIsTestRunning = isRunning;      
-      
-      // Copy files from the container to the host
-      const copyFilesFromContainer = await ddClient.docker.cli.exec("cp", [
-        `${containerId}:/jmeter/${reportPath}`,
-        localResultsPath,
-      ]);
-      ddClient.desktopUI.toast.success(`The test has completed. The generated report can be found at ${localResultsPath}`);        
-    } 
-
-    catch (error) {
-      ddClient.desktopUI.toast.error((error as any).stderr + "\nIf you think this is a bug, please report it.");
+    const isContainerRunning = async (containerId: string) => {
+      const { stdout } = await ddClient.docker.cli.exec("inspect", ["-f", "{{.State.Running}}", containerId]);
+      return stdout.trim() === 'true';
+    };
+    // Check every second if container is still running
+    let isRunning = await isContainerRunning(containerId);
+    
+    while (isRunning) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      isRunning = await isContainerRunning(containerId);
+      // ddClient.desktopUI.toast.success(`Container is running ${isRunning}`);
     }
+    setIsTestRunning = isRunning;      
+    
+    // Copy files from the container to the host
+    const copyFilesFromContainer = await ddClient.docker.cli.exec("cp", [
+      `${containerId}:/jmeter/${reportPath}`,
+      localResultsPath,
+    ]);
+    ddClient.desktopUI.toast.success(`The test has completed. The generated report can be found at ${localResultsPath}`);        
+  } 
+
+  catch (error) {
+    ddClient.desktopUI.toast.error((error as any).stderr + "\nIf you think this is a bug, please report it.");
+  }
+  
 }
+
+interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    fill: boolean;
+    backgroundColor: string;
+    borderColor: string;
+  }[];
+};
 
 export function App() {
   const [response, setResponse] = React.useState<string>();
@@ -416,7 +430,8 @@ export function App() {
   const [oomkilldisable, setOomKillDisable] = React.useState<boolean>(false);
 
   const [outputLogs, setOutputLogs] = React.useState('');
-  const [chartData, setChartData] = React.useState({ labels: [], datasets: [] });
+  const [chartData, setChartData] = React.useState<ChartData>({ labels: [], datasets: [] });
+
 
   const [running, setRunning] = React.useState<boolean>(false); 
 
@@ -450,32 +465,7 @@ export function App() {
     );
   };
 
-  function extractActiveThreadsAndTime(output: any) {
-    const timeMatch = output.match(/in (\d\d:\d\d:\d\d)/);
-    const activeMatch = output.match(/Active: (\d+)/);
-  
-    if (timeMatch && activeMatch) {
-      const time = timeMatch[1];
-      const active = activeMatch[1];
-
-      const data = {
-        labels: [...timeAndActiveThreads, time],
-        datasets: [
-          {
-            label: 'Dataset 1',
-            data: [...timeAndActiveThreads, active],
-            fill: false,
-            backgroundColor: 'rgb(255, 99, 132)',
-            borderColor: 'rgba(255, 99, 132, 0.2)',
-          },
-        ],
-      };
-       
-  
-    }
-  }
-  
-
+ 
   return (
     <>
      <IntroDialog /> 
@@ -829,17 +819,39 @@ export function App() {
                             mem || '', memreserve || '', kernelmem || '', 
                             oomkilldisable || false,
                             (output) => {
-                              setOutputLogs(prevOutput => prevOutput + '\n' + output);
-                              extractActiveThreadsAndTime(output);
-                            }
+                              setOutputLogs(prevOutput => prevOutput + '\n' + output); 
+                              PrepareChartData(output, chartData, setChartData);                              
+                            //   const timeMatch = output.match(/in (\d\d:\d\d:\d\d)/);
+                            //   const activeMatch = output.match(/Active: (\d+)/);
+                            //   if (timeMatch && activeMatch) {
+                            //     const time = timeMatch[1];
+                            //     const active = activeMatch[1];
+                            //     ddClient.desktopUI.toast.success(`Time: ${time} Active: ${active}`);
+                                
+                                
+                            //     setChartData(prevData => ({
+                            //       labels: [...prevData.labels, time],
+                            //       datasets: [
+                            //         {
+                            //           label: 'Active Threads',
+                            //           data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(active)] : [Number(active)],
+                            //           fill: false,
+                            //           backgroundColor: 'rgb(255, 99, 132)',
+                            //           borderColor: 'rgba(255, 99, 132, 0.2)',
+                            //         },
+                            //       ],
+                            //   }));
+                              
+                            // }                              
+                          }                          
                   );
                 }
                 else {
                   setIsTestRunning(false);
-              }
+                }
             }
-              }
-            >
+          }
+        >
               Run JMeter Test
             </Button>
             <Tooltip title="Terminates the test; all the test results will be lost." color="error">
@@ -876,10 +888,11 @@ export function App() {
         {/* Display the line charts */}
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%' }}>
-          <DisplayLineChartTimeSeriesThreads data={chartData} />
+          <div>
+              <DisplayLineChartTimeSeriesThreads data={chartData} options={null} />
+          </div>
         </AccordionDetails>        
       </Stack>
-
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
             <Grid container style={{ padding: "4rem", width: "100%" }}>
