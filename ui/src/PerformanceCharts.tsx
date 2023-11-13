@@ -12,6 +12,7 @@ import {
   } from 'chart.js';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { Ref, forwardRef } from "react";
 import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -29,26 +30,26 @@ ChartJS.register(zoomPlugin);
 type Props = {
     data: ChartData;
     options: any;
+    chartRef: any
 }; 
 
-function DisplayLineChartTimeSeriesThreads({ data }: Props, { options }: Props) {
- 
-  return (        
+function DisplayLineChart({ data, options, chartRef }: Props) { 
+  return (    
     <div style={{ width: '600px', height: '400px' }}>
-        <Line data={data} options={ options }/>
+        <Line data={data} options={ options } ref={ chartRef } />
     </div>
   );
 }
 
-// function for transactions
-function DisplayLineChartTimeSeriesTransactions({ data }: Props, { options }: Props) {
- 
-    return (        
-      <div style={{ width: '600px', height: '400px' }}>
-          <Line data={data} options={ options }/>
-      </div>
-    );
-}
+const DisplayLineChartTimeSeriesThreads = (props: Props) => <DisplayLineChart {...props} />;
+const DisplayLineChartTimeSeriesTransactions = (props: Props) => <DisplayLineChart {...props} />;
+const DisplayLineChartTimeSeriesResponseTime = (props: Props) => <DisplayLineChart {...props} />;
+const DisplayLineChartTimeSeriesErrorPercentage = (props: Props) => <DisplayLineChart {...props} />;
 
-export { DisplayLineChartTimeSeriesThreads, DisplayLineChartTimeSeriesTransactions};
+export { 
+  DisplayLineChartTimeSeriesThreads, 
+  DisplayLineChartTimeSeriesTransactions,
+  DisplayLineChartTimeSeriesResponseTime,
+  DisplayLineChartTimeSeriesErrorPercentage
+};
 
