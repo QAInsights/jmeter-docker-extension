@@ -1,7 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { ChartData } from "./ChartData";
-import { PrepareChartData, PrepareSamplesData } from './PrepareChartData';
-import { DisplayLineChartTimeSeriesThreads, DisplayLineChartTimeSeriesTransactions} from './PerformanceCharts';
+import { 
+  PrepareChartData, 
+  PrepareResponseTimeData, 
+  PrepareSamplesData,
+  PrepareErrorPercentageData
+ } from './PrepareChartData';
+import { DisplayLineChartTimeSeriesThreads, DisplayLineChartTimeSeriesTransactions, DisplayLineChartTimeSeriesResponseTime, DisplayLineChartTimeSeriesErrorPercentage } from './PerformanceCharts';
 import { validateMemory, validateMemoryReservation } from './validateMemory';
 
 import IntroDialog from './IntroDialog'; 
@@ -36,18 +41,38 @@ import {
   FormGroup,
   FormControlLabel,
 } from "@mui/material";
+import { Chart } from 'chart.js/dist';
 
 const options = {
+  scales: {
+    y: {
+      min: 0
+    },  
+  },
   plugins: {
     zoom: {
       zoom: {
+        limits: {
+            y: {  min: 0  }
+          },
         wheel: {
           enabled: true,
-        }
-      },  
-      mode: 'xy',    
-    },
-  },
+          speed: 0.1
+        },
+          
+        drag: { 
+          enabled: true,
+          threshold: 2,
+          modifierKey: 'shift',
+          drawTime: 'beforeDraw'
+        },
+        pinch: {
+          enabled: true
+        },
+        mode: 'xy',
+      }
+    }
+  }
 };
 
 const client = createDockerDesktopClient();
@@ -431,8 +456,16 @@ export function App() {
   const [oomkilldisable, setOomKillDisable] = React.useState<boolean>(false);
 
   const [outputLogs, setOutputLogs] = React.useState('');
+
+  const chartRef = useRef<any>(null);
+  const chartRef2 = useRef<any>(null);
+  const chartRef3 = useRef<any>(null);
+  const chartRef4 = useRef<any>(null);
+  
   const [chartData, setChartData] = React.useState<ChartData>({ labels: [], datasets: [] });
   const [chartSamplesData, setChartSamplesData] = React.useState<ChartData>({ labels: [], datasets: [] });
+  const [chartResponseTimeData, setChartResponseTimeData] = React.useState<ChartData>({ labels: [], datasets: [] });
+  const [chartErrorPercentageData, setChartErrorPercentageData] = React.useState<ChartData>({ labels: [], datasets: [] });
 
   const [running, setRunning] = React.useState<boolean>(false); 
 
@@ -459,6 +492,13 @@ export function App() {
     // Clear output text field 
     setOutputLogs('');
   }
+
+  function handleResetZoom() {
+    chartRef?.current?.resetZoom();
+    chartRef2?.current?.resetZoom();
+    chartRef3?.current?.resetZoom();
+    chartRef4?.current?.resetZoom();
+  };
 
   const openExternalLink= (url: string) => {
     return ddClient.host.openExternal(
@@ -798,7 +838,7 @@ export function App() {
               </CardContent>
           </Card>
         </AccordionDetails>
-      </Stack>        
+      </Stack>
       
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -823,6 +863,9 @@ export function App() {
                               async function handleDataPreparation() {
                                 PrepareChartData(output, chartData, setChartData);
                                 PrepareSamplesData(output, chartSamplesData, setChartSamplesData);
+                                PrepareResponseTimeData(output, chartResponseTimeData, setChartResponseTimeData);
+                                PrepareErrorPercentageData(output, chartErrorPercentageData, setChartErrorPercentageData);
+
                               }
                               
                               handleDataPreparation();                                                   
@@ -870,17 +913,52 @@ export function App() {
       </Stack> 
         {/* Display the line charts */}
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
+        <AccordionDetails sx={{ width: '100%' }}>          
+          <div>
+            <Button variant="contained" 
+            onClick={handleResetZoom}
+            >
+              Reset Zoom
+            </Button>
+            <DisplayLineChartTimeSeriesThreads data={chartData} options={options} chartRef={chartRef}/>
+          </div>
+          
+        </AccordionDetails>
         <AccordionDetails sx={{ width: '100%' }}>
           <div>
-              <DisplayLineChartTimeSeriesThreads data={chartData} options={options}/>
+            <Button variant="contained" 
+              onClick={handleResetZoom}
+              >
+                Reset Zoom
+              </Button>
+            <DisplayLineChartTimeSeriesTransactions data={chartSamplesData} options={options} chartRef={chartRef2}/>
           </div>
         </AccordionDetails>
         <AccordionDetails sx={{ width: '100%' }}>
           <div>
-              <DisplayLineChartTimeSeriesTransactions data={chartSamplesData} options={options}/>
+            <Button variant="contained" 
+              onClick={handleResetZoom}
+              >
+                Reset Zoom
+              </Button>
+            <DisplayLineChartTimeSeriesResponseTime data={chartResponseTimeData} options={options} chartRef={chartRef3}/>
           </div>
-        </AccordionDetails>
+        </AccordionDetails>        
       </Stack>
+
+      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
+        <AccordionDetails sx={{ width: '100%' }}>
+          <div>
+            <Button variant="contained" 
+            onClick={handleResetZoom}
+            >
+              Reset Zoom
+            </Button>
+            <DisplayLineChartTimeSeriesErrorPercentage data={chartErrorPercentageData} options={options} chartRef={chartRef4}/>
+          </div>
+          </AccordionDetails>
+      </Stack>
+
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
             <Grid container style={{ padding: "4rem", width: "100%" }}>
