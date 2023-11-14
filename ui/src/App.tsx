@@ -58,8 +58,7 @@ const options = {
         wheel: {
           enabled: true,
           speed: 0.1
-        },
-          
+        },          
         drag: { 
           enabled: true,
           threshold: 2,
@@ -868,7 +867,7 @@ export function App() {
 
                               }
                               
-                              handleDataPreparation();                                                   
+                              handleDataPreparation();                                                                           
                           }                          
                   );
                 }
@@ -908,56 +907,46 @@ export function App() {
               inputRef: outputLogsRef,
             }}
           />
-        </AccordionDetails>
-        
+        </AccordionDetails>        
       </Stack> 
         {/* Display the line charts */}
-      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
-        <AccordionDetails sx={{ width: '100%' }}>          
-          <div>
-            <Button variant="contained" 
-            onClick={handleResetZoom}
-            >
-              Reset Zoom
-            </Button>
-            <DisplayLineChartTimeSeriesThreads data={chartData} options={options} chartRef={chartRef}/>
-          </div>
-          
-        </AccordionDetails>
-        <AccordionDetails sx={{ width: '100%' }}>
-          <div>
-            <Button variant="contained" 
-              onClick={handleResetZoom}
-              >
-                Reset Zoom
-              </Button>
-            <DisplayLineChartTimeSeriesTransactions data={chartSamplesData} options={options} chartRef={chartRef2}/>
-          </div>
-        </AccordionDetails>
-        <AccordionDetails sx={{ width: '100%' }}>
-          <div>
-            <Button variant="contained" 
-              onClick={handleResetZoom}
-              >
-                Reset Zoom
-              </Button>
-            <DisplayLineChartTimeSeriesResponseTime data={chartResponseTimeData} options={options} chartRef={chartRef3}/>
-          </div>
-        </AccordionDetails>        
-      </Stack>
+      
 
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%' }}>
-          <div>
-            <Button variant="contained" 
-            onClick={handleResetZoom}
-            >
-              Reset Zoom
-            </Button>
-            <DisplayLineChartTimeSeriesErrorPercentage data={chartErrorPercentageData} options={options} chartRef={chartRef4}/>
-          </div>
-          </AccordionDetails>
+          <Button variant="contained" 
+          onClick={handleResetZoom}  
+          >
+            Reset Zoom
+          </Button> 
+        </AccordionDetails>
       </Stack>
+
+      <Grid container spacing={2} sx={{ mt: 4 }}>
+        <Grid item xs={12} md={4}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <DisplayLineChartTimeSeriesThreads data={chartData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}} chartRef={chartRef}/>
+          </AccordionDetails>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <AccordionDetails sx={{ width: '100%' }}>          
+            <DisplayLineChartTimeSeriesTransactions data={chartSamplesData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef2}/>
+          </AccordionDetails>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <DisplayLineChartTimeSeriesResponseTime data={chartResponseTimeData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef3}/>          
+          </AccordionDetails>        
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={1} sx={{ mt: 4 }}>
+        <Grid item xs={12}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <DisplayLineChartTimeSeriesErrorPercentage data={chartErrorPercentageData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef4}/>
+          </AccordionDetails>
+        </Grid>
+      </Grid>
 
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
