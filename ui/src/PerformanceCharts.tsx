@@ -12,7 +12,6 @@ import {
   } from 'chart.js';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { Ref, forwardRef } from "react";
 import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -45,11 +44,15 @@ const DisplayLineChartTimeSeriesThreads = (props: Props) => <DisplayLineChart {.
 const DisplayLineChartTimeSeriesTransactions = (props: Props) => <DisplayLineChart {...props} />;
 const DisplayLineChartTimeSeriesResponseTime = (props: Props) => <DisplayLineChart {...props} />;
 const DisplayLineChartTimeSeriesErrorPercentage = (props: Props) => <DisplayLineChart {...props} />;
+const DisplayLineChartTimeSeriesCpuUsagePercentage = (props: Props) => <DisplayLineChart {...props} />;
+const DisplayLineChartTimeSeriesMemoryUsagePercentage = (props: Props) => <DisplayLineChart {...props} />;
 
 export { 
   DisplayLineChartTimeSeriesThreads, 
   DisplayLineChartTimeSeriesTransactions,
   DisplayLineChartTimeSeriesResponseTime,
-  DisplayLineChartTimeSeriesErrorPercentage
+  DisplayLineChartTimeSeriesErrorPercentage,
+  DisplayLineChartTimeSeriesCpuUsagePercentage,
+  DisplayLineChartTimeSeriesMemoryUsagePercentage
 };
 

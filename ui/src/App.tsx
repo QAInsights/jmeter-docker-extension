@@ -4,9 +4,18 @@ import {
   PrepareChartData, 
   PrepareResponseTimeData, 
   PrepareSamplesData,
-  PrepareErrorPercentageData
+  PrepareErrorPercentageData,
+  PrepareCpuUsageData,
+  PrepareMemoryUsageData
  } from './PrepareChartData';
-import { DisplayLineChartTimeSeriesThreads, DisplayLineChartTimeSeriesTransactions, DisplayLineChartTimeSeriesResponseTime, DisplayLineChartTimeSeriesErrorPercentage } from './PerformanceCharts';
+import { 
+  DisplayLineChartTimeSeriesThreads, 
+  DisplayLineChartTimeSeriesTransactions, 
+  DisplayLineChartTimeSeriesResponseTime, 
+  DisplayLineChartTimeSeriesErrorPercentage, 
+  DisplayLineChartTimeSeriesCpuUsagePercentage, 
+  DisplayLineChartTimeSeriesMemoryUsagePercentage
+} from './PerformanceCharts';
 import { validateMemory, validateMemoryReservation } from './validateMemory';
 
 import IntroDialog from './IntroDialog'; 
@@ -24,8 +33,11 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import MemoryIcon from '@mui/icons-material/Memory';
+import InsightsIcon from '@mui/icons-material/Insights';
+import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import darklogo from '../apache-jmeter-logo-dark.svg';
 import lightlogo from '../apache-jmeter-logo-light.svg';
+
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import {
   AccordionDetails,
@@ -41,7 +53,7 @@ import {
   FormGroup,
   FormControlLabel,
 } from "@mui/material";
-import { Chart } from 'chart.js/dist';
+
 
 const options = {
   scales: {
@@ -219,7 +231,9 @@ async function runJMeter( testPlan: string,
                           cpuSet: string,
                           mem: string, memreserve: string, 
                           kernelmem: string, oomkilldisable: boolean,
-                          onOutput: (output: string) => void
+                          onOutput: (output: string) => void,
+                          onCpuOutput: (cpuUsage: string) => void,
+                          onMemOutput: (memUsage: string) => void,
                           ) {
   
   // Generate a unique ID for the results folder
@@ -227,6 +241,7 @@ async function runJMeter( testPlan: string,
   let reportPath = 'jmeter-reports-' + resultsId;
 
   const ddClient = useDockerDesktopClient(); 
+  
 
   try {
       // Check whether resultsPath contains an extension `.`
@@ -337,11 +352,9 @@ async function runJMeter( testPlan: string,
       if (logsPath) {
         jMeterArgs.push("-j", logsPath);
       }
-      //ddClient.desktopUI.toast.success(`JMeter Command Arguments: ${jMeterArgs}`);
-      
+            
       // Combine the docker and JMeter arguments
-      let cmdArgs = dockerArgs.concat(jMeterArgs);
-      //ddClient.desktopUI.toast.success(`Combined Command Arguments: ${cmdArgs}`);
+      let cmdArgs = dockerArgs.concat(jMeterArgs);      
 
       // Run JMeter Test inside a container       
       const runJMeterTestInsideAContainer = await ddClient.docker.cli.exec("run", cmdArgs);        
@@ -414,6 +427,15 @@ async function runJMeter( testPlan: string,
       await new Promise(resolve => setTimeout(resolve, 1000));
       isRunning = await isContainerRunning(containerId);
       // ddClient.desktopUI.toast.success(`Container is running ${isRunning}`);
+
+      // get container cpu usage
+      const cpuUsage  = await ddClient.docker.cli.exec("stats", ["--no-stream", "--format", "{{.CPUPerc}}", containerId]);
+      onCpuOutput(cpuUsage.stdout);
+
+      // get container memory usage
+      const memUsage = await ddClient.docker.cli.exec("stats", ["--no-stream", "--format", "{{.MemPerc}}", containerId]);
+      onMemOutput(memUsage.stdout);
+
     }
     setIsTestRunning = isRunning;      
     
@@ -460,11 +482,15 @@ export function App() {
   const chartRef2 = useRef<any>(null);
   const chartRef3 = useRef<any>(null);
   const chartRef4 = useRef<any>(null);
+  const chartRef5 = useRef<any>(null);
+  const chartRef6 = useRef<any>(null);
   
   const [chartData, setChartData] = React.useState<ChartData>({ labels: [], datasets: [] });
   const [chartSamplesData, setChartSamplesData] = React.useState<ChartData>({ labels: [], datasets: [] });
   const [chartResponseTimeData, setChartResponseTimeData] = React.useState<ChartData>({ labels: [], datasets: [] });
   const [chartErrorPercentageData, setChartErrorPercentageData] = React.useState<ChartData>({ labels: [], datasets: [] });
+  const [chartCpuUsageData, setChartCpuUsageData] = React.useState<ChartData>({ labels: [], datasets: [] });
+  const [chartMemoryUsageData, setChartMemoryUsageData] = React.useState<ChartData>({ labels: [], datasets: [] });
 
   const [running, setRunning] = React.useState<boolean>(false); 
 
@@ -497,6 +523,8 @@ export function App() {
     chartRef2?.current?.resetZoom();
     chartRef3?.current?.resetZoom();
     chartRef4?.current?.resetZoom();
+    chartRef5?.current?.resetZoom();
+    chartRef6?.current?.resetZoom();
   };
 
   const openExternalLink= (url: string) => {
@@ -863,12 +891,16 @@ export function App() {
                                 PrepareChartData(output, chartData, setChartData);
                                 PrepareSamplesData(output, chartSamplesData, setChartSamplesData);
                                 PrepareResponseTimeData(output, chartResponseTimeData, setChartResponseTimeData);
-                                PrepareErrorPercentageData(output, chartErrorPercentageData, setChartErrorPercentageData);
-
+                                PrepareErrorPercentageData(output, chartErrorPercentageData, setChartErrorPercentageData);                                
                               }
-                              
-                              handleDataPreparation();                                                                           
-                          }                          
+                              handleDataPreparation();
+                            },
+                            (cpuUsage) => {
+                              PrepareCpuUsageData(cpuUsage, chartCpuUsageData, setChartCpuUsageData);
+                            },
+                            (memUsage) => {
+                              PrepareMemoryUsageData(memUsage, chartMemoryUsageData, setChartMemoryUsageData);
+                            }                       
                   );
                 }
                 else {
@@ -909,18 +941,46 @@ export function App() {
           />
         </AccordionDetails>        
       </Stack> 
-        {/* Display the line charts */}
-      
+        {/* Display the line charts */}   
 
-      <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
-        <AccordionDetails sx={{ width: '100%' }}>
-          <Button variant="contained" 
-          onClick={handleResetZoom}  
-          >
-            Reset Zoom
-          </Button> 
-        </AccordionDetails>
-      </Stack>
+        <Stack direction="row">
+    <AccordionDetails sx={{ width: '100%' }}>  
+      <Card variant="outlined">
+        <CardContent>
+          <Grid container  direction="row"  justifyContent="space-between"  alignItems="center" >
+            <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="h6" gutterBottom noWrap> Runtime Dashboard
+                  </Typography><br/>                  
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'left' }}>
+                  <span>
+                    💡 Hold Shift key to pan in/out the chart. <br/>💡 Reset Zoom will reset zoom level in all the charts.
+                  </span>
+                  </Typography>
+              </Stack>
+            </Grid>
+            
+          </Grid>
+        </CardContent>
+      </Card>
+    </AccordionDetails>
+  </Stack>
+
+      <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+        <Stack  direction="row" alignItems="center" spacing={1}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <Button variant="contained" 
+            onClick={handleResetZoom}  
+            >
+              Reset Zoom
+            </Button> 
+          </AccordionDetails>                
+        </Stack>
+      </Grid>
+      
+      
 
       <Grid container spacing={2} sx={{ mt: 4 }}>
         <Grid item xs={12} md={4}>
@@ -941,9 +1001,19 @@ export function App() {
       </Grid>
 
       <Grid container spacing={1} sx={{ mt: 4 }}>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={4}>
           <AccordionDetails sx={{ width: '100%' }}>
             <DisplayLineChartTimeSeriesErrorPercentage data={chartErrorPercentageData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef4}/>
+          </AccordionDetails>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <DisplayLineChartTimeSeriesCpuUsagePercentage data={chartCpuUsageData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef5}/>
+          </AccordionDetails>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <AccordionDetails sx={{ width: '100%' }}>
+            <DisplayLineChartTimeSeriesMemoryUsagePercentage data={chartMemoryUsageData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}}  chartRef={chartRef6}/>
           </AccordionDetails>
         </Grid>
       </Grid>
