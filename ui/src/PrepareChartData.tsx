@@ -15,12 +15,9 @@ function PrepareChartData( output:  String,
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const seconds = now.getSeconds().toString().padStart(2, '0');
         const currentTime = `${hours}:${minutes}:${seconds}`;
-        console.log(currentTime); // Output: e.g. "14:30:00"
         
         const time = currentTime;
         const active = activeMatch[1];
-        console.log(time);
-        console.log(active);
         
         setChartData(prevData => ({
             labels: [...prevData.labels, time],
@@ -54,8 +51,7 @@ function PrepareSamplesData(output:  String,
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const seconds = now.getSeconds().toString().padStart(2, '0');
         const currentTime = `${hours}:${minutes}:${seconds}`;
-        console.log(currentTime); // Output: e.g. "14:30:00"
-
+        
         const time = currentTime;
         const active = transactionsMatch[1];
 
@@ -66,8 +62,8 @@ function PrepareSamplesData(output:  String,
                 label: 'Samples over Time',
                 data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(active)] : [Number(active)],
                 fill: false,
-                backgroundColor: 'rgb(38, 115, 227)',
-                borderColor: 'rgba(38, 115, 227, 0.2)',
+                backgroundColor: 'rgb(217, 8, 104)',
+                borderColor: 'rgba(217, 8, 104, 0.2)',
             },
             ],
         }));
@@ -89,8 +85,7 @@ function PrepareResponseTimeData(output:  String,
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const seconds = now.getSeconds().toString().padStart(2, '0');
         const currentTime = `${hours}:${minutes}:${seconds}`;
-        console.log(currentTime); // Output: e.g. "14:30:00"
-        
+                
         if (timeMatch && averageResponseTime && minResponseTime && maxResponseTime) {
 
             const time = currentTime;
@@ -102,7 +97,7 @@ function PrepareResponseTimeData(output:  String,
                 labels: [...prevData.labels, time],
                 datasets: [
                 {
-                    label: 'Average Response Time',
+                    label: 'Average Response Time (ms)',
                     data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(avg)] : [Number(avg)],
                     fill: false,
                     backgroundColor: 'rgb(38, 115, 227)',
@@ -140,7 +135,7 @@ function PrepareErrorPercentageData(output:  String,
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const seconds = now.getSeconds().toString().padStart(2, '0');
         const currentTime = `${hours}:${minutes}:${seconds}`;
-        console.log(currentTime); // Output: e.g. "14:30:00"
+        
         
         if (timeMatch && errorPercentage) {
 
@@ -151,20 +146,81 @@ function PrepareErrorPercentageData(output:  String,
                 labels: [...prevData.labels, time],
                 datasets: [
                 {
-                    label: 'Error Percentage',
+                    label: 'Error Percentage %',
                     data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(err)] : [Number(err)],
                     fill: false,
-                    backgroundColor: 'rgb(251, 176, 56)',
-                    borderColor: 'rgba(251, 176, 56, 0.2)',
+                    backgroundColor: 'rgb(195, 47, 39)',
+                    borderColor: 'rgba(195, 47, 39, 0.2)',
                 },
                 ],
             }));
         }
 
 }
+
+function PrepareCpuUsageData(output:  String, 
+    chartCpuUsageData: ChartData, setChartCpuUsageData: React.Dispatch<React.SetStateAction<ChartData>>){
+
+    const outputMatch = output.match(/(.+)%/);
+        
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const currentTime = `${hours}:${minutes}:${seconds}`;
+    
+    if (outputMatch) {
+        const cpuUsage = outputMatch[1];
+        setChartCpuUsageData(prevData => ({
+            labels: [...prevData.labels, currentTime],
+            datasets: [
+            {
+                label: 'CPU Usage %',
+                data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(cpuUsage)] : [Number(cpuUsage)],
+                fill: false,
+                backgroundColor: 'rgb(255, 160, 86)',
+                borderColor: 'rgba(255, 160, 86, 0.2)',
+            },
+            ],
+        }));
+    }   
+    
+}
+
+function PrepareMemoryUsageData(output:  String, 
+    chartMemoryUsageData: ChartData, setChartMemoryUsageData: React.Dispatch<React.SetStateAction<ChartData>>){
+    
+    const outputMatch = output.match(/(.+)%/);
+
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const currentTime = `${hours}:${minutes}:${seconds}`;
+    
+    if (outputMatch) {
+        const memoryUsage = outputMatch[1];
+        setChartMemoryUsageData(prevData => ({
+            labels: [...prevData.labels, currentTime],
+            datasets: [
+            {
+                label: 'Memory Usage %',
+                data: Array.isArray(prevData.datasets[0]?.data) ? [...prevData.datasets[0].data, Number(memoryUsage)] : [Number(memoryUsage)],
+                fill: false,
+                backgroundColor: 'rgb(11, 132, 165)',
+                borderColor: 'rgba(11, 132, 165, 0.2)',
+            },
+        ],
+        }));
+    }
+
+
+    }
 export { 
     PrepareChartData, 
     PrepareSamplesData,
     PrepareResponseTimeData,
-    PrepareErrorPercentageData
+    PrepareErrorPercentageData,
+    PrepareCpuUsageData,
+    PrepareMemoryUsageData
 };
