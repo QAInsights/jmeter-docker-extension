@@ -3,16 +3,22 @@
 Run your JMeter load tests without installing JMeter in your local inside Docker Desktop using this awesome extension.
 
 ![JMeter Docker Extension](./assets/JMeter-Docker-Extension.png)
+![Interactive Charts](./assets/Interactive-Charts.png)
+
+# ⤵ Demo
+
+<iframe width="560" height="315" src="https://www.youtube.com/watch?v=OOm9iwC7f44" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 # ⛳️ Features
 
 ✅ Includes base image `qainsights/jmeter:latest` by default  
 ✅ Light-weight and secured container  
+✅ Interactive charts  
 ✅ Supports JMeter plugins  
 ✅ Mount volume for easy management  
 ✅ Supports property files  
 ✅ Supports proxy configuration  
-✅ Support container memory and CPU settings 
+✅ Support container memory and CPU settings  
 ✅ Generates logs and results  
 ✅ Intuitive HTML report  
 ✅ Displays runtime console logs  
