@@ -34,6 +34,8 @@ import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import MemoryIcon from '@mui/icons-material/Memory';
 import InsightsIcon from '@mui/icons-material/Insights';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import darklogo from '../apache-jmeter-logo-dark.svg';
 import lightlogo from '../apache-jmeter-logo-light.svg';
 
@@ -51,7 +53,9 @@ import {
   Stack,
   FormGroup,
   FormControlLabel,
+  Divider,
 } from "@mui/material";
+import { blueGrey, pink } from '@mui/material/colors';
 
 
 const options = {
@@ -84,6 +88,8 @@ const options = {
     }
   }
 };
+
+
 
 const client = createDockerDesktopClient();
 let containerId = '';
@@ -498,8 +504,11 @@ export function App() {
   const isDarkModeEnabled = useMediaQuery('(prefers-color-scheme: dark)');
   const logos = isDarkModeEnabled ? darklogo : lightlogo;
 
+ 
+
   const linkGitHub="https://github.com/qainsights/jmeter-docker-extension?utm_source=dockerextension";
   const linkQainsights="https://qainsights.com/?utm_source=dockerextension";
+  const linkGitHubIssues="https://github.com/QAInsights/jmeter-docker-extension/issues/new?utm_source=dockerextension";
   const linkPersonalLink="https://naveenkumar.pro/?utm_source=dockerextension"
   const linkDonate="https://www.buymeacoffee.com/qainsights?utm_source=dockerextension";
   const linkYoutube="https://youtube.com/playlist?list=PLJ9A48W0kpRIjLkZ32Do9yDZXnnm7_uj_&si=ETuBF2rc9JDCi-iU&utm_source=dockerextension";
@@ -538,22 +547,39 @@ export function App() {
      <IntroDialog /> 
       <br />
       <br />
-      <div style={{textAlign: 'center'}}>
-        <img src={ logos } alt="Apache JMeter Logo" style={{ maxWidth: '100%', height: 'auto' }} />
-      </div>
+      
       {/* <Typography variant="h3" sx={{textAlign: 'center'}}>Apache JMeter</Typography> */}
-      <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-        Run load tests using Apache JMeter inside Docker Desktop.
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-        Customize the JMeter test by adding the JMeter properties and hit the button to run the test. New to JMeter? Check out this&nbsp;
-        <Link href="#" 
-          onClick={() => {
-            openExternalLink(linkYoutube);
-          }}
-        >free YouTube playlist</Link>.
-      </Typography>
-     
+         <Grid container spacing={4} justifyContent='center'>
+          <Grid item xs={8} justifyContent='center'>
+            <Stack direction="column" alignItems="center" justifyContent="center" spacing={2}>
+                <div style={{textAlign: 'center'}}>
+                  <img src={ logos } alt="Apache JMeter Logo" style={{ maxWidth: '100%', height: 'auto' }} />
+                </div>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                  Run load tests using Apache JMeter inside Docker Desktop.
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                  Customize the JMeter test by adding the JMeter properties and hit the button to run the test. New to JMeter? Check out this&nbsp;
+                  <Link href="#" 
+                    onClick={() => {
+                      openExternalLink(linkYoutube);
+                    }}
+                  >free YouTube playlist</Link>.                             
+                </Typography>                
+                <Stack direction="row" alignItems="center" spacing={4} justifyContent="flex-end">
+                  <Link href="#" sx={{color: pink[300], '&:hover': {color: pink[200]}, textDecoration: 'none'}}
+                      onClick={() => ddClient.host.openExternal(linkDonate)}>
+                    Sponsor <MonetizationOnIcon/>
+                  </Link>
+                  <Divider orientation="vertical" variant="middle" flexItem />
+                  <Link href="#" sx={{textDecoration: 'none'}}
+                        onClick={() => ddClient.host.openExternal(linkGitHubIssues)}>
+                    Give Feedback <FeedbackIcon />
+                  </Link>       
+                </Stack>
+              </Stack>
+          </Grid>          
+        </Grid>
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%' }}>
             <Card variant="outlined">
@@ -613,6 +639,7 @@ export function App() {
             </Card>
           </AccordionDetails>
       </Stack>
+      
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }} >
         <AccordionDetails sx={{ width: '100%' }}>
           <Card variant="outlined">
@@ -864,8 +891,7 @@ export function App() {
               </CardContent>
           </Card>
         </AccordionDetails>
-      </Stack>
-      
+      </Stack>      
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
           <Stack direction="row" spacing={2}>
@@ -922,8 +948,7 @@ export function App() {
             </Tooltip>
           </Stack>
         </AccordionDetails>
-      </Stack>
-      
+      </Stack>      
       <Stack direction="row" alignItems="start" spacing={1} sx={{ mt: 4 }}>
         <AccordionDetails sx={{ width: '100%' }}>
           <TextField            
@@ -941,33 +966,31 @@ export function App() {
         </AccordionDetails>        
       </Stack> 
         {/* Display the line charts */}   
-
-        <Stack direction="row">
-    <AccordionDetails sx={{ width: '100%' }}>  
-      <Card variant="outlined">
-        <CardContent>
-          <Grid container  direction="row"  justifyContent="space-between"  alignItems="center" >
-            <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                  <InsightsIcon/>
-                  <Typography variant="h6" gutterBottom noWrap> Runtime Dashboard
-                  </Typography><br/>                  
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'left' }}>
-                  <span>
-                    💡 Hold the Shift key to zoom into the chart. <br/>💡 Reset Zoom will reset zoom level in all the charts.
-                  </span>
-                  </Typography>
-              </Stack>
-            </Grid>
-            
-          </Grid>
-        </CardContent>
-      </Card>
-    </AccordionDetails>
-  </Stack>
-
+      <Stack direction="row">
+        <AccordionDetails sx={{ width: '100%' }}>  
+          <Card variant="outlined">
+            <CardContent>
+              <Grid container  direction="row"  justifyContent="space-between"  alignItems="center" >
+                <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                      <InsightsIcon/>
+                      <Typography variant="h6" gutterBottom noWrap> Runtime Dashboard
+                      </Typography><br/>                  
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'left' }}>
+                      <span>
+                        💡 Hold the Shift key to zoom into the chart. <br/>💡 Reset Zoom will reset zoom level in all the charts.
+                      </span>
+                      </Typography>
+                  </Stack>
+                </Grid>
+                
+              </Grid>
+            </CardContent>
+          </Card>
+        </AccordionDetails>
+      </Stack>
       <Grid container direction="row" justifyContent="flex-end" alignItems="center">
         <Stack  direction="row" alignItems="center" spacing={1}>
           <AccordionDetails sx={{ width: '100%' }}>
@@ -979,14 +1002,11 @@ export function App() {
           </AccordionDetails>                
         </Stack>
       </Grid>
-      
-      
-
       <Grid container spacing={2} sx={{ mt: 4 }}>
         <Grid item xs={12} md={4}>
           <AccordionDetails sx={{ width: '100%' }}>
             <DisplayLineChartTimeSeriesThreads data={chartData} options={{...options, maintainAspectRatio: false, responsive: true, aspectRatio: 1}} chartRef={chartRef}/>
-          </AccordionDetails>
+          </AccordionDetails>          
         </Grid>
         <Grid item xs={12} md={4}>
           <AccordionDetails sx={{ width: '100%' }}>          
@@ -999,7 +1019,7 @@ export function App() {
           </AccordionDetails>        
         </Grid>
       </Grid>
-
+      <Divider orientation='horizontal' variant='middle' flexItem />
       <Grid container spacing={1} sx={{ mt: 4 }}>
         <Grid item xs={12} md={4}>
           <AccordionDetails sx={{ width: '100%' }}>
@@ -1017,7 +1037,6 @@ export function App() {
           </AccordionDetails>
         </Grid>
       </Grid>
-
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 4 }}>
             <AccordionDetails sx={{ width: '100%' }}>
             <Grid container style={{ padding: "4rem", width: "100%" }}>
@@ -1088,7 +1107,7 @@ export function App() {
               </Box>
           </Grid>
         </AccordionDetails>
-      </Stack>                
+      </Stack>
     </>
   );
 }
