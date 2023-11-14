@@ -34,7 +34,6 @@ import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import MemoryIcon from '@mui/icons-material/Memory';
 import InsightsIcon from '@mui/icons-material/Insights';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import darklogo from '../apache-jmeter-logo-dark.svg';
 import lightlogo from '../apache-jmeter-logo-light.svg';
 
@@ -950,13 +949,14 @@ export function App() {
           <Grid container  direction="row"  justifyContent="space-between"  alignItems="center" >
             <Grid item xs={12} sm={4} width={ '100%'} sx={{flexWrap: 'nowrap'}}>
               <Stack direction="row" alignItems="center" spacing={1}>
+                  <InsightsIcon/>
                   <Typography variant="h6" gutterBottom noWrap> Runtime Dashboard
                   </Typography><br/>                  
               </Stack>
               <Stack direction="row" alignItems="center" spacing={1}>
                   <Typography variant="body1" color="text.secondary" sx={{ mt: 2, textAlign: 'left' }}>
                   <span>
-                    💡 Hold Shift key to pan in/out the chart. <br/>💡 Reset Zoom will reset zoom level in all the charts.
+                    💡 Hold the Shift key to zoom into the chart. <br/>💡 Reset Zoom will reset zoom level in all the charts.
                   </span>
                   </Typography>
               </Stack>
