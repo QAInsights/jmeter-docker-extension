@@ -17,6 +17,7 @@ ARG DESCRIPTION_LONG="<h1>Apache JMeter Docker Extension</h1> \
 <h2>⚡️ Features</h2><ul> \
 <li>Includes base image 'qainsights/jmeter:latest by default</li> \
 <li>Light-weight and secured container</li> \
+<li>Interactive charts</li> \
 <li>Supports JMeter plugins</li> \
 <li>Mount volume for easy management</li> \
 <li>Supports property files</li> \
@@ -33,18 +34,22 @@ ARG LICENSE='Apache License 2.0'
 
 ARG ICON_URL='https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/feather.svg'
 ARG SCREENSHOTS_URLS='[ { "alt": "Apache JMeter Docker Extension", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/JMeter-Docker-Extension.png" }, \
-                    { "alt": "Output Logs", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/Output-Logs.png" } ]'
+                        { "alt": "Output Logs", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/JMeter-Docker-Extension-Home-Light.png" }, \
+                        { "alt": "Output Logs", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/Interactive-Charts.png" }, \
+                        { "alt": "Output Logs", "url": "https://raw.githubusercontent.com/QAInsights/jmeter-docker-extension/main/assets/Output-Logs.png" } \
+                    ]'
 ARG PUBLISHER_URL='https://qainsights.com/'
 
 ARG ADDITIONAL_URLS='[ \
-                    { "title": "QAInsights", "url": "https://qainsights.com" }, \
-                    { "title": "GitHub", "url": "https://github.com/QAInsights/jmeter-docker-extension" }, \
-                    { "title": "Community", "url": "https://community.qainsights.com" }, \
-                    { "title": "YouTube", "url": "https://youtube.com/qainsights" } \
+                    { "title": "QAInsights", "url": "https://qainsights.com?utm_source=dockerextension" }, \
+                    { "title": "GitHub", "url": "https://github.com/QAInsights/jmeter-docker-extension?utm_source=dockerextension" }, \
+                    { "title": "Community", "url": "https://community.qainsights.com?utm_source=dockerextension" }, \
+                    { "title": "YouTube", "url": "https://youtube.com/qainsights?utm_source=dockerextension" } \
+                    { "title": "Sponsor", "url": "https://www.buymeacoffee.com/qainsights?utm_source=dockerextension" } \
                     ]'
 ARG CHANGELOG='<p>Extension changelog:</p> <ul> \
-<li>📦 NEW: Container CPU and Memory settings</li> \
-<li>✅ FIX: Minor validation issues</li> \
+<li>📦 NEW: Interactive charts</li> \
+<li>✅ UPDATE: Home page</li> \
 </ul>'
 
 ARG CATEGORIES='testing-tools'
